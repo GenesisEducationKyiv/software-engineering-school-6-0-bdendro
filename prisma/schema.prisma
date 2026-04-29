@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Subscription {
+  id          Int      @id @default(autoincrement())
+  email       String
+  repo        String
+  token       String   @unique
+  confirmed   Boolean  @default(false)
+  lastSeenTag String?  @map("last_seen_tag")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([email, repo])
+  @@index([email])
+  @@map("subscriptions")
+}
