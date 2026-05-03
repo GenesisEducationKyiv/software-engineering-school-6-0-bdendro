@@ -3,6 +3,9 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import { defineConfig } from 'eslint/config';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import jest from 'eslint-plugin-jest';
+
+const testFiles = ['**/*.spec.ts', 'test/**/*.ts'];
 
 export default defineConfig([
   {
@@ -12,22 +15,29 @@ export default defineConfig([
       '**/dist/**',
       '**/node_modules/**',
       'prisma.config.ts',
-      '**/*spec.ts',
+      'src/generated/**',
     ],
   },
+
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
+
+  {
+    files: testFiles,
+    ...jest.configs['flat/recommended'],
+  },
+
   {
     languageOptions: {
       globals: {
         ...globals.node,
       },
-      sourceType: 'commonjs',
       parserOptions: {
         project: ['./tsconfig.json'],
       },
     },
   },
+
   {
     rules: {
       indent: 'off',
@@ -51,5 +61,22 @@ export default defineConfig([
       'no-warning-comments': ['warn', { terms: ['todo', 'fixme'], location: 'anywhere' }],
     },
   },
+
+  {
+    files: testFiles,
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/no-empty-function': 'off',
+      // '@typescript-eslint/no-unsafe-member-access': 'off',
+      // '@typescript-eslint/no-unsafe-argument': 'off',
+    },
+  },
+
   eslintConfigPrettier,
 ]);
