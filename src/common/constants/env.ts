@@ -4,6 +4,8 @@ export const ENV = {
   PRODUCTION: 'production',
 } as const;
 
+export type NodeEnv = (typeof ENV)[keyof typeof ENV];
+
 export const ENV_FILES = {
   ENV: '.env',
   TEST: '.env.test',

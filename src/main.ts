@@ -2,13 +2,15 @@ import { env } from './config/env';
 import { createApp } from './app';
 import { createContainer } from './container';
 import { EMAIL_VERIFICATION_ERROR_KIND } from './email/constants/email-provider';
-import { JobsManager } from './jobs/manager';
+import { createLogger } from './config/logger';
+
+const logger = createLogger(env.NODE_ENV, env.APP_NAME);
 
 async function bootstrap() {
-  const container = createContainer(env);
+  const container = createContainer(env, { logger });
 
   await container.prisma.$connect();
-  console.log('Prisma connection established successfully');
+  logger.info('Prisma connection established successfully');
 
   const emailVerification = await container.emailProvider.verifyTransporter();
   if (!emailVerification.ok) {
@@ -16,54 +18,51 @@ async function bootstrap() {
       throw new Error('SMTP authentication failed. Check email credentials.', {
         cause: emailVerification.error,
       });
-    console.warn(
-      `SMTP is currently unavailable [${emailVerification.kind}]. Server will start without verified email connectivity.`,
-      emailVerification.error,
+
+    logger.warn(
+      { err: emailVerification.error, kind: emailVerification.kind },
+      `SMTP is currently unavailable. Server will start without verified email connectivity.`,
     );
   } else {
-    console.log('SMTP connection successful. Email transporter is ready.');
+    logger.info('SMTP connection successful. Email transporter is ready.');
   }
 
   const app = createApp(container);
 
-  const jobsManager = new JobsManager(
-    container.githubRepositoryReleaseJob,
-    container.services.subscriptionService,
-  );
-
-  jobsManager.startJobs();
+  container.jobsManager.startJobs();
 
   const server = app.listen(env.APP_PORT, () => {
-    console.log(`Express server is listening on port ${env.APP_PORT}`);
+    logger.info(`Express server is listening on port ${env.APP_PORT}`);
   });
 
   async function shutdown() {
-    console.log('Shutting down...');
+    logger.info('Shutting down...');
     server.close();
 
     await container.prisma.$disconnect();
     container.emailProvider.closeConnection();
-    await jobsManager.stopJobs();
+    await container.jobsManager.stopJobs();
 
-    console.log('Application shut down successfully.');
+    logger.info('Application shut down successfully.');
     process.exit(0);
   }
 
   process.on('SIGINT', () => {
     shutdown().catch((err) => {
-      console.log('Shutdown failed.', err);
+      logger.fatal({ err }, 'Shutdown failed.');
       process.exit(1);
     });
   });
+
   process.on('SIGTERM', () => {
     shutdown().catch((err) => {
-      console.log('Shutdown failed.', err);
+      logger.fatal({ err }, 'Shutdown failed.');
       process.exit(1);
     });
   });
 }
 
 bootstrap().catch((err) => {
-  console.log('Failed to start application.', err);
+  logger.fatal({ err }, 'Failed to start application.');
   process.exit(1);
 });

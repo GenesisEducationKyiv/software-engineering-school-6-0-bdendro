@@ -24,9 +24,6 @@ The application validates repositories through the GitHub API, stores subscripti
 - CI pipeline for format check, lint, build, and tests
 - Interactive Swagger UI documentation for API exploration and testing
 
-> **Note**
-> Logging is currently based on `console.log` / `console.error`. A structured logger has not been added yet.
-
 ---
 
 ## Tech Stack

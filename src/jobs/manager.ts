@@ -3,6 +3,7 @@ import { SCHEDULE } from './constants/schedule.const';
 import { GithubRepositoryReleaseJobInterface } from './github-repo-release.job';
 import { env } from '../config/env';
 import { SubscriptionServiceInterface } from '../subscriptions/interfaces/subscription.service.interface';
+import { AppLogger } from '../config/logger';
 
 export class JobsManager {
   private githubReleaseNotificationsJob?: ScheduledTask;
@@ -11,6 +12,7 @@ export class JobsManager {
   constructor(
     private readonly githubRepositoryReleaseJob: GithubRepositoryReleaseJobInterface,
     private readonly subscriptionService: SubscriptionServiceInterface,
+    private readonly logger: AppLogger,
   ) {}
 
   startJobs() {
@@ -21,6 +23,7 @@ export class JobsManager {
         timezone: env.APP_TIMEZONE,
       },
     );
+    this.logger.info('GitHub release notifications job successfully started.');
 
     this.deleteUnconfirmedSubscriptionsJob = cron.schedule(
       SCHEDULE.EVERY_5_MINUTES,
@@ -29,20 +32,25 @@ export class JobsManager {
           const affectedRows = await this.subscriptionService.deleteUnconfirmed(
             env.UNCONFIRMED_EXPIRATION_TIME,
           );
-          console.log(
-            `[${new Date().toISOString()}] Scheduled cleanup: ${affectedRows} unconfirmed subscriptions deleted`,
-          );
+          this.logger.info(`Scheduled cleanup: ${affectedRows} unconfirmed subscriptions deleted`);
         } catch (err) {
-          console.error(`Failed to delete unconfirmed subscriptions during scheduled cleanup`, err);
+          this.logger.error(
+            { err },
+            'Failed to delete unconfirmed subscriptions during scheduled cleanup',
+          );
         }
       },
       { timezone: env.APP_TIMEZONE },
     );
+    this.logger.info('Delete unconfirmed subscriptions job successfully started.');
   }
 
   async stopJobs() {
     if (this.githubReleaseNotificationsJob) await this.githubReleaseNotificationsJob.destroy();
+    this.logger.info('GitHub release notifications job successfully stopped.');
+
     if (this.deleteUnconfirmedSubscriptionsJob)
       await this.deleteUnconfirmedSubscriptionsJob.destroy();
+    this.logger.info('Delete unconfirmed subscriptions job successfully stopped.');
   }
 }

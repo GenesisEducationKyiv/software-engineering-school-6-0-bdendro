@@ -35,7 +35,6 @@ export function validateRequest(schemas: RequestSchemas) {
         continue;
       }
 
-      // TODO: fix types
       (validated[part] as any) = result.data;
     }
 

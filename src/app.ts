@@ -2,7 +2,7 @@ import express, { Application, NextFunction, Request, Response } from 'express';
 import swaggerUi from 'swagger-ui-express';
 import { AppContainer } from './container';
 import { createRouter } from './routes';
-import { errorHandler } from './common/middlewares/error-handler';
+import { createErrorHandler } from './common/middlewares/error-handler';
 import helmet from 'helmet';
 import swaggerDocument from '../docs/swagger.json';
 
@@ -22,7 +22,7 @@ export function createApp(container: AppContainer): Application {
     res.status(404).json({ message: 'Not Found' });
   });
 
-  app.use(errorHandler);
+  app.use(createErrorHandler(container.logger));
 
   return app;
 }
