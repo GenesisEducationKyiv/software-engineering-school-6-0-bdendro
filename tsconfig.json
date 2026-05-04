@@ -25,7 +25,6 @@
     "noImplicitOverride": true,
     "noImplicitReturns": true,
     "types": ["node", "jest"]
-    // "exactOptionalPropertyTypes": true,
   },
   "exclude": ["node_modules", "dist", "prisma.config.ts"]
 }
