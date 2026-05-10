@@ -1,7 +1,7 @@
 import cron, { ScheduledTask } from 'node-cron';
 import { SCHEDULE } from './constants/schedule.const';
 import { GithubRepositoryReleaseJobInterface } from './github-repo-release.job';
-import { env } from '../config/env';
+import type { Env } from '../config/env';
 import { SubscriptionServiceInterface } from '../subscriptions/interfaces/subscription.service.interface';
 import { AppLogger } from '../config/logger';
 
@@ -13,6 +13,7 @@ export class JobsManager {
     private readonly githubRepositoryReleaseJob: GithubRepositoryReleaseJobInterface,
     private readonly subscriptionService: SubscriptionServiceInterface,
     private readonly logger: AppLogger,
+    private readonly env: Env,
   ) {}
 
   startJobs() {
@@ -20,7 +21,7 @@ export class JobsManager {
       SCHEDULE.EVERY_10_MINUTES,
       () => this.githubRepositoryReleaseJob.run(),
       {
-        timezone: env.APP_TIMEZONE,
+        timezone: this.env.APP_TIMEZONE,
       },
     );
     this.logger.info('GitHub release notifications job successfully started.');
@@ -30,7 +31,7 @@ export class JobsManager {
       async () => {
         try {
           const affectedRows = await this.subscriptionService.deleteUnconfirmed(
-            env.UNCONFIRMED_EXPIRATION_TIME,
+            this.env.UNCONFIRMED_EXPIRATION_TIME,
           );
           this.logger.info(`Scheduled cleanup: ${affectedRows} unconfirmed subscriptions deleted`);
         } catch (err) {
@@ -40,7 +41,7 @@ export class JobsManager {
           );
         }
       },
-      { timezone: env.APP_TIMEZONE },
+      { timezone: this.env.APP_TIMEZONE },
     );
     this.logger.info('Delete unconfirmed subscriptions job successfully started.');
   }

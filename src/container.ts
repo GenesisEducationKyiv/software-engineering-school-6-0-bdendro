@@ -27,7 +27,7 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   const prisma = overrides?.prisma || createPrismaClient(env.DATABASE_URL);
 
   const emailProvider = overrides?.emailProvider || new EmailProvider(env);
-  const emailService = new EmailService(emailProvider);
+  const emailService = new EmailService(emailProvider, env.APP_BASE_URL);
 
   const githubRateLimiter = new GithubRateLimiter();
   const githubClient = overrides?.githubClient || new GithubClient(githubRateLimiter, env);
@@ -49,7 +49,7 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
     logger,
   );
 
-  const jobsManager = new JobsManager(githubRepositoryReleaseJob, subscriptionService, logger);
+  const jobsManager = new JobsManager(githubRepositoryReleaseJob, subscriptionService, logger, env);
 
   return {
     logger,

@@ -8,16 +8,19 @@ import { getRepoUpdateTemplate } from './templates/repo-update.template';
 import { getUnsubscribeSuccessTemplate } from './templates/unsubscribed.template';
 
 export class EmailService implements EmailServiceInterface {
-  constructor(private readonly emailProvider: EmailProviderInterface) {}
+  constructor(
+    private readonly emailProvider: EmailProviderInterface,
+    private readonly appBaseUrl: string,
+  ) {}
 
   async sendConfirmationEmail(to: string, token: string, repo: string): Promise<void> {
-    const confirmationUrl = `${EMAIL.CONFIRMATION_BASE_URL}/${token}`;
+    const confirmationUrl = `${this.appBaseUrl}/${EMAIL.CONFIRMATION_PATH}/${token}`;
     const html = getConfirmEmailTemplate(confirmationUrl, repo);
     await this.emailProvider.send({ to, subject: EMAIL.SUBJECT_CONFIRMATION, html });
   }
 
   async sendConfirmationSuccessEmail(to: string, token: string, repo: string): Promise<void> {
-    const unsubscribeUrl = `${EMAIL.UNSUBSCRIBE_BASE_URL}/${token}`;
+    const unsubscribeUrl = `${this.appBaseUrl}/${EMAIL.UNSUBSCRIBE_PATH}/${token}`;
     const html = getConfirmationSuccessTemplate(unsubscribeUrl, repo);
     await this.emailProvider.send({ to, subject: EMAIL.SUBJECT_CONFIRMED, html });
   }
@@ -32,7 +35,7 @@ export class EmailService implements EmailServiceInterface {
     release: GithubReleaseResponseInterface,
     token: string,
   ): Promise<void> {
-    const unsubscribeUrl = `${EMAIL.UNSUBSCRIBE_BASE_URL}/${token}`;
+    const unsubscribeUrl = `${this.appBaseUrl}/${EMAIL.UNSUBSCRIBE_PATH}/${token}`;
     const html = getRepoUpdateTemplate(release, unsubscribeUrl);
     await this.emailProvider.send({ to, subject: EMAIL.SUBJECT_REPO, html });
   }

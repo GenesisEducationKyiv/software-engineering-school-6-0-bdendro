@@ -8,6 +8,7 @@ export const subscribeBodySchema = z.strictObject({
   repo: z
     .string()
     .trim()
+    .toLowerCase()
     .regex(/^[^/\s]+\/[^/\s]+$/, 'Repository must be in owner/repo format'),
 });
 
