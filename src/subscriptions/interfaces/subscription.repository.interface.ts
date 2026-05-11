@@ -4,7 +4,7 @@ import { SubscribeBody } from '../schemas/subscription.schema';
 export type SubscribeReq = SubscribeBody & { lastSeenTag: string | null };
 
 export interface SubscriptionRepositoryInterface {
-  getAll(): Promise<Subscription[]>;
+  getConfirmedSubscriptions(): Promise<Subscription[]>;
   getSubscriptionsByEmail(email: string): Promise<Subscription[]>;
   getSubscriptionByToken(token: string): Promise<Subscription | null>;
   create(subscribeReq: SubscribeReq, token: string): Promise<Subscription>;

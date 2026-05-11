@@ -1,13 +1,16 @@
 import { GithubReleaseResponseInterface } from '../github/dto/github.response.dto';
 import { EMAIL } from './constants/email.const';
 import { EmailProviderInterface } from './interfaces/email.provider.interface';
-import { EmailServiceInterface } from './interfaces/email.service.interface';
+import { GithubReleaseEmailServiceInterface } from './interfaces/github-release-email.service.interface';
+import { SubscriptionEmailServiceInterface } from './interfaces/subscription-email.service.interface';
 import { getConfirmEmailTemplate } from './templates/confirm-email.template';
 import { getConfirmationSuccessTemplate } from './templates/confirmation-success.template';
 import { getRepoUpdateTemplate } from './templates/repo-update.template';
 import { getUnsubscribeSuccessTemplate } from './templates/unsubscribed.template';
 
-export class EmailService implements EmailServiceInterface {
+export class EmailService
+  implements SubscriptionEmailServiceInterface, GithubReleaseEmailServiceInterface
+{
   constructor(
     private readonly emailProvider: EmailProviderInterface,
     private readonly appBaseUrl: string,

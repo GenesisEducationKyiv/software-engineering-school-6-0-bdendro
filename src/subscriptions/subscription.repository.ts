@@ -11,8 +11,8 @@ import {
 export class SubscriptionRepository implements SubscriptionRepositoryInterface {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async getAll(): Promise<Subscription[]> {
-    return await this.prisma.subscription.findMany();
+  async getConfirmedSubscriptions(): Promise<Subscription[]> {
+    return await this.prisma.subscription.findMany({ where: { confirmed: true } });
   }
 
   async getSubscriptionsByEmail(email: string): Promise<Subscription[]> {

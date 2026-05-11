@@ -3,8 +3,8 @@ import { SubscriptionResponseDTO } from '../dto/subscription.response.dto';
 import { SubscribeBody } from '../schemas/subscription.schema';
 
 export interface SubscriptionServiceInterface {
-  getAll(): Promise<Subscription[]>;
-  deleteUnconfirmed(expirationTime: string): Promise<number>;
+  getConfirmedSubscriptions(): Promise<Subscription[]>;
+  deleteUnconfirmed(expirationTimeInMs: number): Promise<number>;
   updateLastSeenTagByToken(token: string, lastSeenTag: string): Promise<SubscriptionResponseDTO>;
   subscribe(subscribeBody: SubscribeBody): Promise<void>;
   confirm(token: string): Promise<void>;

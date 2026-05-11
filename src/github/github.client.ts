@@ -85,8 +85,6 @@ export class GithubClient implements GithubClientInterface {
 
   private setupInterceptors(): void {
     this.client.interceptors.request.use((config) => {
-      this.rateLimiter.clearIfExpired();
-
       if (this.rateLimiter.isBlocked()) {
         throw new GithubError(
           new Error(

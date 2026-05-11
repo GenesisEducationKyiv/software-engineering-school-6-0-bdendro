@@ -5,26 +5,24 @@ import { SubscriptionServiceInterface } from './interfaces/subscription.service.
 import { SubscribeBody } from './schemas/subscription.schema';
 import { NotFoundError } from '../common/utils/errors/custom-errors';
 import { SUBSCRIPTION_ERROR_MESSAGES } from './constants/error-messages';
-import { EmailServiceInterface } from '../email/interfaces/email.service.interface';
 import { GithubServiceInterface } from '../github/interfaces/github.service.interface';
 import { GITHUB_ERROR_MESSAGES } from '../github/constants/error-messages';
 import { Subscription } from '../generated/prisma/client';
-import ms from 'ms';
+import { SubscriptionEmailServiceInterface } from '../email/interfaces/subscription-email.service.interface';
 
 export class SubscriptionService implements SubscriptionServiceInterface {
   constructor(
     private readonly subscriptionRepository: SubscriptionRepositoryInterface,
-    private readonly emailService: EmailServiceInterface,
+    private readonly emailService: SubscriptionEmailServiceInterface,
     private readonly githubService: GithubServiceInterface,
   ) {}
 
-  async getAll(): Promise<Subscription[]> {
-    return await this.subscriptionRepository.getAll();
+  async getConfirmedSubscriptions(): Promise<Subscription[]> {
+    return await this.subscriptionRepository.getConfirmedSubscriptions();
   }
 
-  async deleteUnconfirmed(expirationTime: string): Promise<number> {
-    const expirationTimeInMs = ms(expirationTime as ms.StringValue);
-    return await this.subscriptionRepository.deleteUnconfirmed(expirationTimeInMs);
+  async deleteUnconfirmed(expirationTimeInMs: number): Promise<number> {
+    return this.subscriptionRepository.deleteUnconfirmed(expirationTimeInMs);
   }
 
   async updateLastSeenTagByToken(

@@ -1,3 +1,4 @@
+import ms from 'ms';
 import { AppLogger } from './common/modules/logger/interfaces/logger.interface';
 import { PinoLogger } from './common/modules/logger/pino-logger';
 import { Env } from './config/env';
@@ -10,8 +11,9 @@ import { GithubClient } from './github/github.client';
 import { GithubService } from './github/github.service';
 import { GithubClientInterface } from './github/interfaces/github.client.interface';
 import { GithubRateLimiter } from './github/utils/github-rate-limiter';
-import { GithubRepositoryReleaseJob } from './jobs/github-repo-release.job';
+import { GithubReleaseNotificationJob } from './jobs/github-repo-release.job';
 import { JobsManager } from './jobs/manager';
+import { UnconfirmedSubscriptionsCleanupJob } from './jobs/unconfirmed-subscriptions.job';
 import { SubscriptionController } from './subscriptions/subscription.controller';
 import { SubscriptionRepository } from './subscriptions/subscription.repository';
 import { SubscriptionService } from './subscriptions/subscription.service';
@@ -43,7 +45,7 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   );
   const subscriptionController = new SubscriptionController(subscriptionService);
 
-  const githubRepositoryReleaseJob = new GithubRepositoryReleaseJob(
+  const githubRepositoryReleaseJob = new GithubReleaseNotificationJob(
     githubService,
     subscriptionService,
     emailService,
@@ -51,7 +53,18 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
     logger,
   );
 
-  const jobsManager = new JobsManager(githubRepositoryReleaseJob, subscriptionService, logger, env);
+  const unconfirmedSubscriptionsCleanupJob = new UnconfirmedSubscriptionsCleanupJob(
+    logger,
+    subscriptionService,
+    ms(env.UNCONFIRMED_EXPIRATION_TIME as ms.StringValue),
+  );
+
+  const jobsManager = new JobsManager(
+    githubRepositoryReleaseJob,
+    unconfirmedSubscriptionsCleanupJob,
+    logger,
+    env,
+  );
 
   return {
     logger,

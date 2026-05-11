@@ -15,7 +15,7 @@ async function bootstrap() {
 
   const emailVerification = await container.emailProvider.verifyTransporter();
   if (!emailVerification.ok) {
-    if (emailVerification.kind !== EMAIL_VERIFICATION_ERROR_KIND.CONNECTION)
+    if (emailVerification.kind !== EMAIL_VERIFICATION_ERROR_KIND.AUTH)
       throw new Error('SMTP authentication failed. Check email credentials.', {
         cause: emailVerification.error,
       });

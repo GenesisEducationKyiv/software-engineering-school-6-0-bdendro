@@ -1,14 +1,14 @@
 import type { Subscription } from '../generated/prisma/client';
 import { NotFoundError } from '../common/utils/errors/custom-errors';
-import { EmailServiceInterface } from '../email/interfaces/email.service.interface';
 import { GithubServiceInterface } from '../github/interfaces/github.service.interface';
 import { SubscriptionRepositoryInterface } from './interfaces/subscription.repository.interface';
 import { SubscriptionService } from './subscription.service';
+import { SubscriptionEmailServiceInterface } from '../email/interfaces/subscription-email.service.interface';
 
 describe('SubscriptionService', () => {
   let subscriptionService: SubscriptionService;
   let subscriptionRepository: jest.Mocked<SubscriptionRepositoryInterface>;
-  let emailService: jest.Mocked<EmailServiceInterface>;
+  let emailService: jest.Mocked<SubscriptionEmailServiceInterface>;
   let githubService: jest.Mocked<GithubServiceInterface>;
 
   const email = 'test@example.com';
@@ -41,7 +41,7 @@ describe('SubscriptionService', () => {
 
   beforeAll(() => {
     subscriptionRepository = {
-      getAll: jest.fn(),
+      getConfirmedSubscriptions: jest.fn(),
       deleteUnconfirmed: jest.fn(),
       updateByToken: jest.fn(),
       create: jest.fn(),
@@ -54,8 +54,7 @@ describe('SubscriptionService', () => {
       sendConfirmationEmail: jest.fn(),
       sendConfirmationSuccessEmail: jest.fn(),
       sendUnsubscribeSuccessEmail: jest.fn(),
-      sendGitHubReleaseEmail: jest.fn(),
-    } as jest.Mocked<EmailServiceInterface>;
+    } as jest.Mocked<SubscriptionEmailServiceInterface>;
 
     githubService = {
       isRepositoryExists: jest.fn(),
@@ -73,7 +72,7 @@ describe('SubscriptionService', () => {
     jest.resetAllMocks();
   });
 
-  describe('getAll', () => {
+  describe('getConfirmedSubscriptions', () => {
     const subscriptions = [
       createSubscription(),
       createSubscription({
@@ -83,22 +82,24 @@ describe('SubscriptionService', () => {
       }),
     ];
 
-    it('should return all subscriptions', async () => {
-      subscriptionRepository.getAll.mockResolvedValue(subscriptions);
+    it('should return all confirmed subscriptions', async () => {
+      subscriptionRepository.getConfirmedSubscriptions.mockResolvedValue(subscriptions);
 
-      const result = await subscriptionService.getAll();
+      const result = await subscriptionService.getConfirmedSubscriptions();
 
       expect(result).toEqual(subscriptions);
     });
   });
 
   describe('deleteUnconfirmed', () => {
-    it('should convert expiration time to milliseconds and pass it to repository', async () => {
+    const expirationTimeInMs = 600_000;
+
+    it('should delete unconfirmed subscriptions', async () => {
       subscriptionRepository.deleteUnconfirmed.mockResolvedValue(3);
 
-      const result = await subscriptionService.deleteUnconfirmed('10m');
+      const result = await subscriptionService.deleteUnconfirmed(expirationTimeInMs);
 
-      expect(subscriptionRepository.deleteUnconfirmed).toHaveBeenCalledWith(600000);
+      expect(subscriptionRepository.deleteUnconfirmed).toHaveBeenCalledWith(expirationTimeInMs);
       expect(result).toBe(3);
     });
   });

@@ -2,7 +2,7 @@ export interface RateLimiterInterface {
   isBlocked(now?: Date): boolean;
   blockUntil(date: Date): void;
   getRetryAfterSeconds(now?: Date): number;
-  clearIfExpired(now?: Date): void;
+  unblock(): void;
 }
 
 export class RateLimiter implements RateLimiterInterface {
@@ -14,11 +14,13 @@ export class RateLimiter implements RateLimiterInterface {
   }
 
   isBlocked(now: Date = new Date()): boolean {
-    this.clearIfExpired();
+    this.clearIfExpired(now);
     return !!this.blockedUntil && now < this.blockedUntil;
   }
 
   getRetryAfterSeconds(now: Date = new Date()): number {
+    this.clearIfExpired(now);
+
     if (!this.blockedUntil) {
       return 0;
     }
@@ -27,11 +29,11 @@ export class RateLimiter implements RateLimiterInterface {
     return diffMs > 0 ? Math.ceil(diffMs / 1000) : 0;
   }
 
-  clearIfExpired(now: Date = new Date()): void {
-    if (this.blockedUntil && now >= this.blockedUntil) this.blockedUntil = null;
+  unblock(): void {
+    this.blockedUntil = null;
   }
 
-  protected clear(): void {
-    this.blockedUntil = null;
+  protected clearIfExpired(now: Date = new Date()): void {
+    if (this.blockedUntil && now >= this.blockedUntil) this.blockedUntil = null;
   }
 }
