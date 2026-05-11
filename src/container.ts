@@ -1,5 +1,7 @@
+import { AppLogger } from './common/modules/logger/interfaces/logger.interface';
+import { PinoLogger } from './common/modules/logger/pino-logger';
 import { Env } from './config/env';
-import { AppLogger, createLogger } from './config/logger';
+import { createLoggerConfig } from './config/logger';
 import { createPrismaClient, DBClient } from './config/prisma';
 import { EmailProvider } from './email/email.provider';
 import { EmailService } from './email/email.service';
@@ -22,7 +24,7 @@ export type ContainerOverrides = Partial<{
 }>;
 
 export function createContainer(env: Env, overrides?: ContainerOverrides) {
-  const logger = overrides?.logger || createLogger(env.NODE_ENV, env.APP_NAME);
+  const logger = overrides?.logger || new PinoLogger(createLoggerConfig(env));
 
   const prisma = overrides?.prisma || createPrismaClient(env.DATABASE_URL);
 

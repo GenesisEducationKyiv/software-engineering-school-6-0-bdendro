@@ -2,9 +2,10 @@ import { env } from './config/env';
 import { createApp } from './app';
 import { createContainer } from './container';
 import { EMAIL_VERIFICATION_ERROR_KIND } from './email/constants/email-provider';
-import { createLogger } from './config/logger';
+import { createLoggerConfig } from './config/logger';
+import { PinoLogger } from './common/modules/logger/pino-logger';
 
-const logger = createLogger(env.NODE_ENV, env.APP_NAME);
+const logger = new PinoLogger(createLoggerConfig(env));
 
 async function bootstrap() {
   const container = createContainer(env, { logger });
@@ -48,21 +49,21 @@ async function bootstrap() {
   }
 
   process.on('SIGINT', () => {
-    shutdown().catch((err) => {
+    shutdown().catch((err: unknown) => {
       logger.fatal({ err }, 'Shutdown failed.');
       process.exit(1);
     });
   });
 
   process.on('SIGTERM', () => {
-    shutdown().catch((err) => {
+    shutdown().catch((err: unknown) => {
       logger.fatal({ err }, 'Shutdown failed.');
       process.exit(1);
     });
   });
 }
 
-bootstrap().catch((err) => {
+bootstrap().catch((err: unknown) => {
   logger.fatal({ err }, 'Failed to start application.');
   process.exit(1);
 });

@@ -1,5 +1,5 @@
+import { AppLogger } from '../common/modules/logger/interfaces/logger.interface';
 import { ConflictError, GithubError, NotFoundError } from '../common/utils/errors/custom-errors';
-import { AppLogger } from '../config/logger';
 import { EmailServiceInterface } from '../email/interfaces/email.service.interface';
 import { GithubServiceInterface } from '../github/interfaces/github.service.interface';
 import { GithubRateLimiterInterface } from '../github/utils/github-rate-limiter';

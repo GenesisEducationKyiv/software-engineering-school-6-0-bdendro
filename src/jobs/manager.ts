@@ -3,7 +3,7 @@ import { SCHEDULE } from './constants/schedule.const';
 import { GithubRepositoryReleaseJobInterface } from './github-repo-release.job';
 import type { Env } from '../config/env';
 import { SubscriptionServiceInterface } from '../subscriptions/interfaces/subscription.service.interface';
-import { AppLogger } from '../config/logger';
+import { AppLogger } from '../common/modules/logger/interfaces/logger.interface';
 
 export class JobsManager {
   private githubReleaseNotificationsJob?: ScheduledTask;
