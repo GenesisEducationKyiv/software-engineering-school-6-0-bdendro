@@ -42,10 +42,10 @@ export class GithubReleaseNotificationJob implements JobInterface {
       }
       try {
         const release = await this.githubService.getLastRelease(sub.repo);
-        if (release !== null && release.lastSeenTag !== sub.lastSeenTag) {
+        if (release !== null && release.tagName !== sub.lastSeenTag) {
           await this.emailService.sendGitHubReleaseEmail(sub.email, release, sub.token);
           try {
-            await this.subscriptionService.updateLastSeenTagByToken(sub.token, release.lastSeenTag);
+            await this.subscriptionService.updateLastSeenTagByToken(sub.token, release.tagName);
           } catch (err) {
             if (err instanceof ConflictError || err instanceof NotFoundError)
               this.logger.info({ err }, 'Error while trying to update last_seen_tag');

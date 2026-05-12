@@ -1,4 +1,4 @@
-import { GithubReleaseResponseInterface } from '../github/dto/github.response.dto';
+import { GithubRelease } from '../github/types/github-release';
 import { EMAIL } from './constants/email.const';
 import { EmailProviderInterface } from './interfaces/email.provider.interface';
 import { GithubReleaseEmailServiceInterface } from './interfaces/github-release-email.service.interface';
@@ -33,11 +33,7 @@ export class EmailService
     await this.emailProvider.send({ to, subject: EMAIL.SUBJECT_CANCELED, html });
   }
 
-  async sendGitHubReleaseEmail(
-    to: string,
-    release: GithubReleaseResponseInterface,
-    token: string,
-  ): Promise<void> {
+  async sendGitHubReleaseEmail(to: string, release: GithubRelease, token: string): Promise<void> {
     const unsubscribeUrl = `${this.appBaseUrl}/${EMAIL.UNSUBSCRIBE_PATH}/${token}`;
     const html = getRepoUpdateTemplate(release, unsubscribeUrl);
     await this.emailProvider.send({ to, subject: EMAIL.SUBJECT_REPO, html });

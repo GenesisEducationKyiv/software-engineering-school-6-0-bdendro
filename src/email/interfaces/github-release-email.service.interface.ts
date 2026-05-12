@@ -1,9 +1,5 @@
-import { GithubReleaseResponseInterface } from '../../github/dto/github.response.dto';
+import { GithubRelease } from '../../github/types/github-release';
 
 export interface GithubReleaseEmailServiceInterface {
-  sendGitHubReleaseEmail(
-    to: string,
-    release: GithubReleaseResponseInterface,
-    token: string,
-  ): Promise<void>;
+  sendGitHubReleaseEmail(to: string, release: GithubRelease, token: string): Promise<void>;
 }

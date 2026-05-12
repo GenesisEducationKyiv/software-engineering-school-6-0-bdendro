@@ -1,26 +1,24 @@
 import { AxiosInstance } from 'axios';
 import axios from 'axios';
-import { Endpoints } from '@octokit/types';
-import {
-  GithubClientInterface,
-  GitHubLatestReleaseDto,
-  GitHubRepoDto,
-} from './interfaces/github.client.interface';
+import { GithubClientInterface } from './interfaces/github.client.interface';
 import { Env } from '../config/env';
 import { GITHUB_API_ENDPOINT, GITHUB_API_VERSION } from './constants/github.const';
 import { GithubError } from '../common/utils/errors/custom-errors';
 import { GithubRateLimiterInterface, GitHubRateLimitHeaders } from './utils/github-rate-limiter';
-
-type GitHubGetRepoResponse = Endpoints['GET /repos/{owner}/{repo}']['response']['data'];
-
-type GitHubGetLatestReleaseResponse =
-  Endpoints['GET /repos/{owner}/{repo}/releases/latest']['response']['data'];
+import { GithubRepository } from './types/github-repository';
+import {
+  GithubLatestReleaseApiResponse,
+  GithubRepositoryApiResponse,
+} from './dto/github-api.response.dto';
+import { GithubRelease } from './types/github-release';
+import { GithubClientMapperInterface } from './interfaces/github.mapper.interface';
 
 export class GithubClient implements GithubClientInterface {
   private readonly client: AxiosInstance;
 
   constructor(
     private readonly rateLimiter: GithubRateLimiterInterface,
+    private readonly mapper: GithubClientMapperInterface,
     env: Env,
   ) {
     this.client = axios.create({
@@ -36,18 +34,13 @@ export class GithubClient implements GithubClientInterface {
     this.setupInterceptors();
   }
 
-  async getRepository(repo: string): Promise<GitHubRepoDto | null> {
+  async getRepository(repo: string): Promise<GithubRepository | null> {
     try {
-      const { data } = await this.client.get<GitHubGetRepoResponse>(
+      const { data } = await this.client.get<GithubRepositoryApiResponse>(
         GITHUB_API_ENDPOINT.getRepoEndpoint(repo),
       );
 
-      return {
-        id: data.id,
-        full_name: data.full_name,
-        private: data.private,
-        html_url: data.html_url,
-      };
+      return this.mapper.toRepository(data);
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const status = err.response?.status;
@@ -59,19 +52,12 @@ export class GithubClient implements GithubClientInterface {
     }
   }
 
-  async getLatestRelease(repo: string): Promise<GitHubLatestReleaseDto | null> {
+  async getLatestRelease(repo: string): Promise<GithubRelease | null> {
     try {
-      const { data } = await this.client.get<GitHubGetLatestReleaseResponse>(
+      const { data } = await this.client.get<GithubLatestReleaseApiResponse>(
         GITHUB_API_ENDPOINT.getRepoLastRelease(repo),
       );
-      return {
-        id: data.id,
-        tag_name: data.tag_name,
-        name: data.name,
-        html_url: data.html_url,
-        body: data.body,
-        published_at: data.published_at,
-      };
+      return this.mapper.toLatestRelease(data, repo);
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const status = err.response?.status;

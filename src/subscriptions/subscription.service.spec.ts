@@ -1,9 +1,11 @@
-import type { Subscription } from '../generated/prisma/client';
 import { NotFoundError } from '../common/utils/errors/custom-errors';
 import { GithubServiceInterface } from '../github/interfaces/github.service.interface';
 import { SubscriptionRepositoryInterface } from './interfaces/subscription.repository.interface';
 import { SubscriptionService } from './subscription.service';
 import { SubscriptionEmailServiceInterface } from '../email/interfaces/subscription-email.service.interface';
+import { GithubRelease } from '../github/types/github-release';
+import { SubscribeBody } from './schemas/subscription.schema';
+import { Subscription } from './types/subscription';
 
 describe('SubscriptionService', () => {
   let subscriptionService: SubscriptionService;
@@ -15,17 +17,19 @@ describe('SubscriptionService', () => {
   const repo = 'owner/repo';
   const token = 'test-token';
 
-  const subscribeBody = {
+  const subscribeBody: SubscribeBody = {
     email,
     repo,
-  } as const;
+  };
 
-  const release = {
-    repo,
-    lastSeenTag: 'v1.2.3',
+  const release: GithubRelease = {
+    id: 1,
+    repoName: repo,
+    name: 'name',
+    tagName: 'v1.2.3',
     htmlUrl: 'https://github.com/owner/repo/releases/tag/v1.2.3',
     publishedAt: '2026-04-12T10:00:00.000Z',
-  } as const;
+  };
 
   const createSubscription = (overrides: Partial<Subscription> = {}): Subscription =>
     ({
@@ -110,19 +114,19 @@ describe('SubscriptionService', () => {
       lastSeenTag: 'v2.0.0',
     });
 
-    it('should update last seen tag and return response dto', async () => {
+    it('should update last seen tag and return subscription', async () => {
       subscriptionRepository.updateByToken.mockResolvedValue(updatedSubscription);
+      const lastSeenTag = 'v2.0.0';
 
-      const result = await subscriptionService.updateLastSeenTagByToken(token, 'v2.0.0');
+      const result = await subscriptionService.updateLastSeenTagByToken(token, lastSeenTag);
 
       expect(subscriptionRepository.updateByToken).toHaveBeenCalledWith(token, {
-        lastSeenTag: 'v2.0.0',
+        lastSeenTag,
       });
       expect(result).toEqual({
-        email: updatedSubscription.email,
-        repo: updatedSubscription.repo,
-        confirmed: updatedSubscription.confirmed,
-        last_seen_tag: updatedSubscription.lastSeenTag,
+        ...updatedSubscription,
+        token,
+        lastSeenTag,
       });
     });
 
@@ -152,7 +156,7 @@ describe('SubscriptionService', () => {
       expect(subscriptionRepository.create).toHaveBeenCalledWith(
         {
           ...subscribeBody,
-          lastSeenTag: release.lastSeenTag,
+          lastSeenTag: release.tagName,
         },
         expect.any(String),
       );
@@ -267,8 +271,8 @@ describe('SubscriptionService', () => {
   });
 
   describe('getSubscriptionsByEmail', () => {
-    it('should return subscriptions mapped to response DTOs', async () => {
-      const subscriptions = [
+    it('should return subscriptions', async () => {
+      const subscriptions: Subscription[] = [
         createSubscription({
           id: 1,
           confirmed: true,
@@ -282,27 +286,12 @@ describe('SubscriptionService', () => {
         }),
       ];
 
-      const expected = [
-        {
-          email,
-          repo,
-          confirmed: true,
-          last_seen_tag: 'v1.0.0',
-        },
-        {
-          email,
-          repo: 'owner/second-repo',
-          confirmed: false,
-          last_seen_tag: null,
-        },
-      ];
-
       subscriptionRepository.getSubscriptionsByEmail.mockResolvedValue(subscriptions);
 
       const result = await subscriptionService.getSubscriptionsByEmail(email);
 
       expect(subscriptionRepository.getSubscriptionsByEmail).toHaveBeenCalledWith(email);
-      expect(result).toEqual(expected);
+      expect(result).toEqual(subscriptions);
     });
   });
 });

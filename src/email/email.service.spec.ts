@@ -1,3 +1,4 @@
+import { GithubRelease } from '../github/types/github-release';
 import { EMAIL } from './constants/email.const';
 import { EmailService } from './email.service';
 import { EmailProviderInterface } from './interfaces/email.provider.interface';
@@ -32,12 +33,14 @@ describe('EmailService', () => {
   const token = 'test-token';
   const repo = 'owner/repo';
 
-  const release = {
-    repo,
-    lastSeenTag: 'v1.2.3',
+  const release: GithubRelease = {
+    id: 1,
+    repoName: repo,
+    tagName: 'v1.2.3',
+    name: null,
     htmlUrl: 'https://github.com/owner/repo/releases/tag/v1.2.3',
     publishedAt: '2026-04-12T10:00:00.000Z',
-  } as const;
+  };
 
   const confirmTemplateHtml = '<p>confirm-template</p>';
   const confirmationSuccessTemplateHtml = '<p>confirmation-success-template</p>';

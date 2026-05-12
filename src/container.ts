@@ -17,6 +17,9 @@ import { UnconfirmedSubscriptionsCleanupJob } from './jobs/unconfirmed-subscript
 import { SubscriptionController } from './subscriptions/subscription.controller';
 import { SubscriptionRepository } from './subscriptions/subscription.repository';
 import { SubscriptionService } from './subscriptions/subscription.service';
+import { GithubClientMapper } from './github/mappers/github-client.mapper';
+import { SubscriptionPrismaMapper } from './subscriptions/mappers/subscription-prisma.mapper';
+import { SubscriptionControllerMapper } from './subscriptions/mappers/subscription-controller.mapper';
 
 export type ContainerOverrides = Partial<{
   logger: AppLogger;
@@ -34,16 +37,23 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   const emailService = new EmailService(emailProvider, env.APP_BASE_URL);
 
   const githubRateLimiter = new GithubRateLimiter();
-  const githubClient = overrides?.githubClient || new GithubClient(githubRateLimiter, env);
+  const githubClientMapper = new GithubClientMapper();
+  const githubClient =
+    overrides?.githubClient || new GithubClient(githubRateLimiter, githubClientMapper, env);
   const githubService = new GithubService(githubClient);
 
-  const subscriptionRepository = new SubscriptionRepository(prisma);
+  const subscriptionRepositoryMapper = new SubscriptionPrismaMapper();
+  const subscriptionRepository = new SubscriptionRepository(prisma, subscriptionRepositoryMapper);
   const subscriptionService = new SubscriptionService(
     subscriptionRepository,
     emailService,
     githubService,
   );
-  const subscriptionController = new SubscriptionController(subscriptionService);
+  const subscriptionControllerMapper = new SubscriptionControllerMapper();
+  const subscriptionController = new SubscriptionController(
+    subscriptionService,
+    subscriptionControllerMapper,
+  );
 
   const githubRepositoryReleaseJob = new GithubReleaseNotificationJob(
     githubService,
