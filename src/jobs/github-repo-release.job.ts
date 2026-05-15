@@ -1,4 +1,5 @@
 import { ConflictError, GithubError, NotFoundError } from '../common/utils/errors/custom-errors';
+import { AppLogger } from '../config/logger';
 import { EmailServiceInterface } from '../email/interfaces/email.service.interface';
 import { GithubServiceInterface } from '../github/interfaces/github.service.interface';
 import { GithubRateLimiterInterface } from '../github/utils/github-rate-limiter';
@@ -14,9 +15,10 @@ export class GithubRepositoryReleaseJob implements GithubRepositoryReleaseJobInt
     private readonly subscriptionService: SubscriptionServiceInterface,
     private readonly emailService: EmailServiceInterface,
     private readonly githubRateLimiter: GithubRateLimiterInterface,
+    private readonly logger: AppLogger,
   ) {}
   async run(): Promise<void> {
-    console.log(`[${new Date().toISOString()}] GitHub repository release notification execution.`);
+    this.logger.info('GitHub repository release notification execution.');
     try {
       if (this.githubRateLimiter.isBlocked()) {
         throw new GithubError(
@@ -27,7 +29,7 @@ export class GithubRepositoryReleaseJob implements GithubRepositoryReleaseJobInt
       }
       await this.checkReleasesAndNotifySubscribers();
     } catch (err) {
-      console.error('While doing scheduled repository release notification task', err);
+      this.logger.error({ err }, 'While doing scheduled repository release notification task');
     }
   }
 
@@ -49,12 +51,12 @@ export class GithubRepositoryReleaseJob implements GithubRepositoryReleaseJobInt
             await this.subscriptionService.updateLastSeenTagByToken(sub.token, release.lastSeenTag);
           } catch (err) {
             if (err instanceof ConflictError || err instanceof NotFoundError)
-              console.log('Error while trying to update last_seen_tag', err);
+              this.logger.info({ err }, 'Error while trying to update last_seen_tag');
             throw err;
           }
         }
       } catch (err) {
-        console.error('While doing scheduled repository release notification task', err);
+        this.logger.error({ err }, 'While doing scheduled repository release notification task');
       }
     }
   }

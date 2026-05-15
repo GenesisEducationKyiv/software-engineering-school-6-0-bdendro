@@ -25,7 +25,8 @@ The application validates repositories through the GitHub API, stores subscripti
 - Interactive Swagger UI documentation for API exploration and testing
 
 > **Note**
-> Logging is currently based on `console.log` / `console.error`. A structured logger has not been added yet.
+> For structured logging this project uses **Pino**. Please avoid using `console`.
+> To log events instantiate or inject `PinoLogger` and use its methods.
 
 ---
 
@@ -42,6 +43,7 @@ The application validates repositories through the GitHub API, stores subscripti
 - node-cron
 - Jest
 - ESLint + Prettier
+- Pino
 - Docker
 
 ---

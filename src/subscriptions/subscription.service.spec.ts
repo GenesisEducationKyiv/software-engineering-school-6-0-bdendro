@@ -1,9 +1,7 @@
 import type { Subscription } from '../generated/prisma/client';
 import { NotFoundError } from '../common/utils/errors/custom-errors';
 import { EmailServiceInterface } from '../email/interfaces/email.service.interface';
-import { GITHUB_ERROR_MESSAGES } from '../github/constants/error-messages';
 import { GithubServiceInterface } from '../github/interfaces/github.service.interface';
-import { SUBSCRIPTION_ERROR_MESSAGES } from './constants/error-messages';
 import { SubscriptionRepositoryInterface } from './interfaces/subscription.repository.interface';
 import { SubscriptionService } from './subscription.service';
 

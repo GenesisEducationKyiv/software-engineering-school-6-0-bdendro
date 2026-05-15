@@ -35,7 +35,7 @@ jobs:
         run: npm run format:diff
 
       - name: Lint
-        run: npm run lint:check
+        run: npm run lint
 
       - name: Build project
         run: npm run build

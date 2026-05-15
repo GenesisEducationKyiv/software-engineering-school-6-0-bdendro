@@ -23,7 +23,7 @@ export function validateRequest(schemas: RequestSchemas) {
         continue;
       }
 
-      const result = schema.safeParse(req[part] || {});
+      const result = schema.safeParse(req[part]);
 
       if (!result.success) {
         details.push(
@@ -35,7 +35,6 @@ export function validateRequest(schemas: RequestSchemas) {
         continue;
       }
 
-      // TODO: fix types
       (validated[part] as any) = result.data;
     }
 
