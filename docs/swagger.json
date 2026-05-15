@@ -1,0 +1,357 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "GitHub Release Notification API that allows users to subscribe to email notifications about new releases of a chosen GitHub repository.",
+    "version": "1.0.0",
+    "title": "GitHub Release Notification API"
+  },
+  "schemes": ["http", "https"],
+  "tags": [
+    {
+      "name": "subscription",
+      "description": "Subscription management operations"
+    }
+  ],
+  "paths": {
+    "/api/subscribe": {
+      "post": {
+        "tags": ["subscription"],
+        "summary": "Subscribe to release notifications",
+        "description": "Subscribe an email to receive notifications about new releases of a GitHub repository. The repository is validated via GitHub API.",
+        "operationId": "subscribe",
+        "consumes": ["application/x-www-form-urlencoded"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "email",
+            "in": "formData",
+            "description": "Email address to subscribe",
+            "required": true,
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          {
+            "name": "repo",
+            "in": "formData",
+            "description": "GitHub repository in owner/repo format (e.g., golang/go)",
+            "required": true,
+            "type": "string",
+            "example": "golang/go"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subscription successful. Confirmation email sent.",
+            "schema": {
+              "$ref": "#/definitions/MessageResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Subscription successful. Confirmation email sent."
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input (e.g., invalid repo format)",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Validation Error",
+                "details": [
+                  {
+                    "path": ["repo"],
+                    "message": "Repository must be in owner/repo format"
+                  }
+                ]
+              }
+            }
+          },
+          "404": {
+            "description": "Repository not found on GitHub",
+            "schema": {
+              "$ref": "#/definitions/MessageResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "GitHub repository not found or inaccessible."
+              }
+            }
+          },
+          "409": {
+            "description": "Email already subscribed to this repository",
+            "schema": {
+              "$ref": "#/definitions/MessageResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Subscription with these email, repo already exists"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/confirm/{token}": {
+      "get": {
+        "tags": ["subscription"],
+        "summary": "Confirm email subscription",
+        "description": "Confirms a subscription using the token sent in the confirmation email.",
+        "operationId": "confirmSubscription",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "description": "Confirmation token",
+            "required": true,
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subscription confirmed successfully",
+            "schema": {
+              "$ref": "#/definitions/MessageResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Subscription confirmed successfully"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid token",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Validation Error",
+                "details": [
+                  {
+                    "path": ["token"],
+                    "message": "Invalid UUID"
+                  }
+                ]
+              }
+            }
+          },
+          "404": {
+            "description": "Token not found",
+            "schema": {
+              "$ref": "#/definitions/MessageResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Subscription Not Found"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/unsubscribe/{token}": {
+      "get": {
+        "tags": ["subscription"],
+        "summary": "Unsubscribe from release notifications",
+        "description": "Unsubscribes an email from release notifications using the token sent in emails.",
+        "operationId": "unsubscribe",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "description": "Unsubscribe token",
+            "required": true,
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unsubscribed successfully",
+            "schema": {
+              "$ref": "#/definitions/MessageResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Unsubscribed successfully"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid token",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Validation Error",
+                "details": [
+                  {
+                    "path": ["token"],
+                    "message": "Invalid UUID"
+                  }
+                ]
+              }
+            }
+          },
+          "404": {
+            "description": "Token not found",
+            "schema": {
+              "$ref": "#/definitions/MessageResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Subscription Not Found"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/subscriptions": {
+      "get": {
+        "tags": ["subscription"],
+        "summary": "Get subscriptions for an email",
+        "description": "Returns all active subscriptions for the given email address.",
+        "operationId": "getSubscriptions",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "description": "Email address to look up subscriptions for",
+            "required": true,
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation - list of subscriptions returned",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Subscription"
+              }
+            },
+            "examples": {
+              "application/json": [
+                {
+                  "email": "user@example.com",
+                  "repo": "golang/go",
+                  "confirmed": true,
+                  "last_seen_tag": "go1.25.0"
+                },
+                {
+                  "email": "user@example.com",
+                  "repo": "nodejs/node",
+                  "confirmed": false,
+                  "last_seen_tag": null
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid email",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Validation Error",
+                "details": [
+                  {
+                    "path": ["email"],
+                    "message": "Invalid email address"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Subscription": {
+      "type": "object",
+      "required": ["email", "repo", "confirmed"],
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address",
+          "example": "user@example.com"
+        },
+        "repo": {
+          "type": "string",
+          "description": "GitHub repository in owner/repo format",
+          "example": "golang/go"
+        },
+        "confirmed": {
+          "type": "boolean",
+          "description": "Whether the subscription is confirmed",
+          "example": true
+        },
+        "last_seen_tag": {
+          "type": "string",
+          "description": "Last seen release tag for this repository",
+          "example": "go1.25.0",
+          "x-nullable": true
+        }
+      }
+    },
+    "MessageResponse": {
+      "type": "object",
+      "required": ["message"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Subscription successful. Confirmation email sent."
+        }
+      }
+    },
+    "ValidationErrorDetail": {
+      "type": "object",
+      "required": ["path", "message"],
+      "properties": {
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "example": ["email"]
+        },
+        "message": {
+          "type": "string",
+          "example": "Invalid email address"
+        }
+      }
+    },
+    "ValidationErrorResponse": {
+      "type": "object",
+      "required": ["message", "details"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Validation Error"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ValidationErrorDetail"
+          }
+        }
+      }
+    }
+  }
+}

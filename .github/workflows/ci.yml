@@ -1,0 +1,105 @@
+name: Continuous Integration Pipeline
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+jobs:
+  check-and-build:
+    name: Check and Build
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate prisma client
+        run: npm run generate:prisma
+
+      - name: Check code formatting
+        run: npm run format:diff
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build project
+        run: npm run build
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: check-and-build
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: github_release_subscription_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d github_release_subscription_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      NODE_ENV: test
+
+      APP_NAME: ${{ vars.APP_NAME }}
+      APP_BASE_URL: ${{ vars.APP_BASE_URL }}
+      APP_TIMEZONE: ${{ vars.APP_TIMEZONE }}
+
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/github_release_subscription_test
+
+      EMAIL: ${{ secrets.EMAIL_USER }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      EMAIL_HOST: ${{ vars.EMAIL_HOST }}
+      EMAIL_PORT: ${{ vars.EMAIL_PORT }}
+      EMAIL_SECURE: ${{ vars.EMAIL_SECURE }}
+
+      GITHUB_API_URL: ${{ vars.GH_API_URL }}
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate prisma client
+        run: npm run generate:prisma
+
+      - name: Run database migrations
+        run: npm run migrate:prod
+
+      - name: Run tests
+        run: npm run test

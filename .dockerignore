@@ -1,0 +1,16 @@
+node_modules
+dist
+build
+coverage
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+*.log
+.idea
+.vscode
+.claude
+.tmp
+.temp
