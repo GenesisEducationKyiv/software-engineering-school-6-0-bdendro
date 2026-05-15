@@ -8,10 +8,14 @@ import {
 import { SubscribeBody, SubscriptionsQuery, TokenParams } from './schemas/subscription.schema';
 import { SubscriptionServiceInterface } from './interfaces/subscription.service.interface';
 import { ResponseMessage } from '../common/types/response';
-import { SubscriptionResponseDTO } from './dto/subscription.response.dto';
+import { SubscriptionResponse } from './dto/subscription.response.dto';
+import { SubscriptionControllerMapperInterface } from './interfaces/subscription.mapper.interface';
 
 export class SubscriptionController implements SubscriptionControllerInterface {
-  constructor(private readonly subscriptionService: SubscriptionServiceInterface) {}
+  constructor(
+    private readonly subscriptionService: SubscriptionServiceInterface,
+    private readonly mapper: SubscriptionControllerMapperInterface,
+  ) {}
 
   async subscribe(
     req: RequestWithValidatedBody<SubscribeBody>,
@@ -39,11 +43,11 @@ export class SubscriptionController implements SubscriptionControllerInterface {
 
   async getSubscriptionsByEmail(
     req: RequestWithValidatedQuery<SubscriptionsQuery>,
-    res: Response<SubscriptionResponseDTO[]>,
+    res: Response<SubscriptionResponse[]>,
   ): Promise<void> {
     const subscriptions = await this.subscriptionService.getSubscriptionsByEmail(
       req.validated.query.email,
     );
-    res.status(200).json(subscriptions);
+    res.status(200).json(this.mapper.toSubscriptionsResponse(subscriptions));
   }
 }

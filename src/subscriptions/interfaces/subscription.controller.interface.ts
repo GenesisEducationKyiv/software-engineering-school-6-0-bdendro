@@ -6,7 +6,7 @@ import {
 } from '../../common/types/validated-request';
 import { SubscribeBody, SubscriptionsQuery, TokenParams } from '../schemas/subscription.schema';
 import { ResponseMessage } from '../../common/types/response';
-import { SubscriptionResponseDTO } from '../dto/subscription.response.dto';
+import { SubscriptionResponse } from '../dto/subscription.response.dto';
 
 export interface SubscriptionControllerInterface {
   subscribe(
@@ -26,6 +26,6 @@ export interface SubscriptionControllerInterface {
 
   getSubscriptionsByEmail(
     req: RequestWithValidatedQuery<SubscriptionsQuery>,
-    res: Response<SubscriptionResponseDTO[]>,
+    res: Response<SubscriptionResponse[]>,
   ): Promise<void>;
 }

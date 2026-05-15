@@ -1,45 +1,34 @@
 import { randomUUID } from 'node:crypto';
-import { SubscriptionResponseDTO } from './dto/subscription.response.dto';
 import { SubscriptionRepositoryInterface } from './interfaces/subscription.repository.interface';
 import { SubscriptionServiceInterface } from './interfaces/subscription.service.interface';
 import { SubscribeBody } from './schemas/subscription.schema';
 import { NotFoundError } from '../common/utils/errors/custom-errors';
 import { SUBSCRIPTION_ERROR_MESSAGES } from './constants/error-messages';
-import { EmailServiceInterface } from '../email/interfaces/email.service.interface';
 import { GithubServiceInterface } from '../github/interfaces/github.service.interface';
 import { GITHUB_ERROR_MESSAGES } from '../github/constants/error-messages';
-import { Subscription } from '../generated/prisma/client';
-import ms from 'ms';
+import { Subscription } from './types/subscription';
+import { SubscriptionEmailServiceInterface } from '../email/interfaces/subscription-email.service.interface';
 
 export class SubscriptionService implements SubscriptionServiceInterface {
   constructor(
     private readonly subscriptionRepository: SubscriptionRepositoryInterface,
-    private readonly emailService: EmailServiceInterface,
+    private readonly emailService: SubscriptionEmailServiceInterface,
     private readonly githubService: GithubServiceInterface,
   ) {}
 
-  async getAll(): Promise<Subscription[]> {
-    return await this.subscriptionRepository.getAll();
+  async getConfirmedSubscriptions(): Promise<Subscription[]> {
+    return await this.subscriptionRepository.getConfirmedSubscriptions();
   }
 
-  async deleteUnconfirmed(expirationTime: string): Promise<number> {
-    const expirationTimeInMs = ms(expirationTime as ms.StringValue);
-    return await this.subscriptionRepository.deleteUnconfirmed(expirationTimeInMs);
+  async deleteUnconfirmed(expirationTimeInMs: number): Promise<number> {
+    return this.subscriptionRepository.deleteUnconfirmed(expirationTimeInMs);
   }
 
-  async updateLastSeenTagByToken(
-    token: string,
-    lastSeenTag: string,
-  ): Promise<SubscriptionResponseDTO> {
+  async updateLastSeenTagByToken(token: string, lastSeenTag: string): Promise<Subscription> {
     const subscription = await this.subscriptionRepository.updateByToken(token, { lastSeenTag });
     if (!subscription) throw new NotFoundError(SUBSCRIPTION_ERROR_MESSAGES.NOT_FOUND);
 
-    return {
-      email: subscription.email,
-      repo: subscription.repo,
-      confirmed: subscription.confirmed,
-      last_seen_tag: subscription.lastSeenTag,
-    };
+    return subscription;
   }
 
   async subscribe(subscribeBody: SubscribeBody): Promise<void> {
@@ -50,7 +39,7 @@ export class SubscriptionService implements SubscriptionServiceInterface {
 
     const token = randomUUID();
     await this.subscriptionRepository.create(
-      { ...subscribeBody, lastSeenTag: release?.lastSeenTag || null },
+      { ...subscribeBody, lastSeenTag: release?.tagName || null },
       token,
     );
 
@@ -81,13 +70,7 @@ export class SubscriptionService implements SubscriptionServiceInterface {
     return;
   }
 
-  async getSubscriptionsByEmail(email: string): Promise<SubscriptionResponseDTO[]> {
-    const subscriptions = await this.subscriptionRepository.getSubscriptionsByEmail(email);
-    return subscriptions.map((sub) => ({
-      email: sub.email,
-      repo: sub.repo,
-      confirmed: sub.confirmed,
-      last_seen_tag: sub.lastSeenTag,
-    }));
+  async getSubscriptionsByEmail(email: string): Promise<Subscription[]> {
+    return await this.subscriptionRepository.getSubscriptionsByEmail(email);
   }
 }
