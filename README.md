@@ -24,6 +24,10 @@ The application validates repositories through the GitHub API, stores subscripti
 - CI pipeline for format check, lint, build, and tests
 - Interactive Swagger UI documentation for API exploration and testing
 
+> **Note**
+> For structured logging this project uses **Pino**. Please avoid using `console`.
+> To log events instantiate or inject `PinoLogger` and use its methods.
+
 ---
 
 ## Tech Stack
@@ -39,6 +43,7 @@ The application validates repositories through the GitHub API, stores subscripti
 - node-cron
 - Jest
 - ESLint + Prettier
+- Pino
 - Docker
 
 ---
