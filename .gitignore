@@ -51,5 +51,7 @@ pids
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
+coverage
+
 /src/generated/prisma
 src/test.ts
