@@ -16,6 +16,7 @@ export default defineConfig([
       '**/node_modules/**',
       'prisma.config.ts',
       'src/generated/**',
+      'coverage/',
     ],
   },
 

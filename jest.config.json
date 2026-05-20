@@ -8,19 +8,20 @@
       "transform": {
         "^.+\\.(t|j)s$": "ts-jest"
       },
-      "collectCoverageFrom": ["**/*.(t|j)s"],
       "coverageDirectory": "../coverage",
       "testEnvironment": "node"
     },
     {
       "displayName": "integration",
       "moduleFileExtensions": ["js", "json", "ts"],
-      "rootDir": "src",
+      "rootDir": "test/integration",
       "testRegex": ".*\\.int-spec\\.ts$",
       "transform": {
         "^.+\\.(t|j)s$": "ts-jest"
       },
-      "collectCoverageFrom": ["**/*.(t|j)s"],
+      "moduleNameMapper": {
+        "^(\\.{1,2}/.*)\\.js$": "$1"
+      },
       "coverageDirectory": "../coverage",
       "testEnvironment": "node",
       "testTimeout": 30000
