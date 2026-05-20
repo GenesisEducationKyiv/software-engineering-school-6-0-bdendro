@@ -47,10 +47,14 @@ export class SubscriptionService implements SubscriptionServiceInterface {
   }
 
   async confirm(token: string): Promise<void> {
-    const subscription = await this.subscriptionRepository.updateByToken(token, {
+    const subscription = await this.subscriptionRepository.getSubscriptionByToken(token);
+
+    if (!subscription) throw new NotFoundError(SUBSCRIPTION_ERROR_MESSAGES.NOT_FOUND);
+    if (subscription.confirmed) return;
+
+    await this.subscriptionRepository.updateByToken(token, {
       confirmed: true,
     });
-    if (!subscription) throw new NotFoundError(SUBSCRIPTION_ERROR_MESSAGES.NOT_FOUND);
 
     await this.emailService.sendConfirmationSuccessEmail(
       subscription.email,

@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 COPY prisma ./prisma/
+COPY docs/swagger.json ./docs/swagger.json
 
 # --- Dependencies stage ---
 FROM base AS deps

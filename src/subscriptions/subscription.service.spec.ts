@@ -31,17 +31,16 @@ describe('SubscriptionService', () => {
     publishedAt: '2026-04-12T10:00:00.000Z',
   };
 
-  const createSubscription = (overrides: Partial<Subscription> = {}): Subscription =>
-    ({
-      id: 1,
-      email,
-      repo,
-      token,
-      confirmed: false,
-      lastSeenTag: 'v1.0.0',
-      createdAt: new Date('2026-01-01T00:00:00.000Z'),
-      ...overrides,
-    }) as Subscription;
+  const createSubscription = (overrides: Partial<Subscription> = {}): Subscription => ({
+    id: 1,
+    email,
+    repo,
+    token,
+    confirmed: false,
+    lastSeenTag: 'v1.0.0',
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    ...overrides,
+  });
 
   beforeAll(() => {
     subscriptionRepository = {
@@ -219,14 +218,17 @@ describe('SubscriptionService', () => {
 
   describe('confirm', () => {
     it('should confirm subscription and send confirmation success email', async () => {
-      const confirmedSubscription = createSubscription({
-        confirmed: true,
-      });
+      const unconfirmedSubscription = createSubscription();
+      const confirmedSubscription: Subscription = { ...unconfirmedSubscription, confirmed: true };
 
+      subscriptionRepository.getSubscriptionByToken.mockResolvedValue(unconfirmedSubscription);
       subscriptionRepository.updateByToken.mockResolvedValue(confirmedSubscription);
 
       await subscriptionService.confirm(token);
 
+      expect(subscriptionRepository.getSubscriptionByToken).toHaveBeenCalledTimes(1);
+      expect(subscriptionRepository.getSubscriptionByToken).toHaveBeenCalledWith(token);
+      expect(subscriptionRepository.updateByToken).toHaveBeenCalledTimes(1);
       expect(subscriptionRepository.updateByToken).toHaveBeenCalledWith(token, {
         confirmed: true,
       });
@@ -238,10 +240,24 @@ describe('SubscriptionService', () => {
       );
     });
 
+    it('should not update subscription or send email if subscription is already confirmed', async () => {
+      const confirmedSubscription = createSubscription({ confirmed: true });
+
+      subscriptionRepository.getSubscriptionByToken.mockResolvedValue(confirmedSubscription);
+
+      await subscriptionService.confirm(token);
+
+      expect(subscriptionRepository.getSubscriptionByToken).toHaveBeenCalledTimes(1);
+      expect(subscriptionRepository.getSubscriptionByToken).toHaveBeenCalledWith(token);
+      expect(subscriptionRepository.updateByToken).not.toHaveBeenCalled();
+      expect(emailService.sendConfirmationSuccessEmail).not.toHaveBeenCalled();
+    });
+
     it('should throw NotFoundError when subscription to confirm is not found', async () => {
-      subscriptionRepository.updateByToken.mockResolvedValue(null);
+      subscriptionRepository.getSubscriptionByToken.mockResolvedValue(null);
 
       await expect(subscriptionService.confirm(token)).rejects.toThrow(NotFoundError);
+      expect(subscriptionRepository.updateByToken).not.toHaveBeenCalled();
       expect(emailService.sendConfirmationSuccessEmail).not.toHaveBeenCalled();
     });
   });
