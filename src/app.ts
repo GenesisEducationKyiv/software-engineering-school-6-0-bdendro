@@ -4,7 +4,7 @@ import { AppContainer } from './container';
 import { createRouter } from './routes';
 import { createErrorHandler } from './common/middlewares/error-handler';
 import helmet from 'helmet';
-import { join } from 'node:path';
+import path, { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 
 const swaggerDocumentPath = join(__dirname, '..', 'docs', 'swagger.json');
@@ -20,6 +20,8 @@ export function createApp(container: AppContainer): Application {
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  app.use(express.static(path.join(__dirname, '..', 'public')));
 
   app.use('/api', createRouter(container.controllers));
 
