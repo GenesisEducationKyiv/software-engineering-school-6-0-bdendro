@@ -35,24 +35,11 @@ services:
       migrate:
         condition: service_completed_successfully
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/github_subscription_api?schema=public
       NODE_ENV: production
-
-  test:
-    build:
-      context: .
-      target: test
-    depends_on:
-      db:
-        condition: service_healthy
-    env_file:
-      - .env.test
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/github_subscription_api?schema=public
-    profiles:
-      - test
 
 volumes:
   pgdata:
