@@ -83,7 +83,7 @@ test.describe('Subscription e2e creation', () => {
 
     await githubApiMock.mockRepositoryError(repo, {
       status: 404,
-      body: { message: 'Repository not found' },
+      jsonBody: { message: 'Repository not found' },
     });
 
     await subscriptionPage.subscribe({ email, repo });

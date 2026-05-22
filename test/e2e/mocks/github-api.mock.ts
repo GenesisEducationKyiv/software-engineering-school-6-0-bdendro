@@ -24,7 +24,7 @@ type WireMockHeaders = Record<string, string>;
 interface WireMockResponse<T extends object = object> {
   status: number;
   headers?: WireMockHeaders;
-  body?: T;
+  jsonBody?: T;
 }
 
 interface WireMockMapping {
@@ -86,7 +86,7 @@ export class GithubApiMock {
       response: {
         status: 200,
         headers: this.jsonHeaders(),
-        body: responseBody,
+        jsonBody: responseBody,
       },
     });
   }
@@ -100,7 +100,7 @@ export class GithubApiMock {
       response: {
         status: 200,
         headers: this.jsonHeaders(),
-        body: responseBody,
+        jsonBody: responseBody,
       },
     });
   }
