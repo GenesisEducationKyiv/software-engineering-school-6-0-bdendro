@@ -12,6 +12,7 @@ const envSchema = z.object({
   APP_NAME: z.string().trim().min(1),
   APP_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   APP_BASE_URL: z.url({ protocol: /^https?$/ }),
+  APP_CLIENT_BASE_URL: z.url({ protocol: /^https?$/ }),
   APP_TIMEZONE: z
     .string()
     .trim()

@@ -22,6 +22,7 @@
     "test": "npm run test:unit",
     "test:unit": "jest --selectProjects unit",
     "test:int": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --selectProjects integration --runInBand",
+    "test:e2e": "playwright test",
     "test:cov": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage"
   },
   "dependencies": {
@@ -42,6 +43,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@octokit/types": "^16.0.0",
+    "@playwright/test": "^1.60.0",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/ms": "^2.1.0",
