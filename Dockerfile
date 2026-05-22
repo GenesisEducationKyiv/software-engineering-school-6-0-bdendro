@@ -24,7 +24,9 @@ COPY . .
 CMD ["npx", "prisma", "migrate", "deploy"]
 
 # --- Build stage ---
-FROM migration AS build
+FROM deps AS build
+
+COPY . .
 
 RUN npm run build
 
@@ -41,7 +43,16 @@ EXPOSE 3000
 
 CMD ["sh", "-c", "node dist/main.js"]
 
-# --- Test stage ---
-FROM migration AS test
+# --- Unit test stage ---
+FROM deps AS test-unit
 
-CMD ["sh", "-c", "npm run test"]
+COPY . .
+
+CMD ["sh", "-c", "npm run test:unit"]
+
+# --- Integration test stage ---
+FROM deps AS test-int
+
+COPY . .
+
+CMD ["sh", "-c", "npm run test:int"]

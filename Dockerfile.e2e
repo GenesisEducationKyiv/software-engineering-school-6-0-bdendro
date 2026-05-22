@@ -1,0 +1,12 @@
+FROM mcr.microsoft.com/playwright:v1.56.1-noble
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+RUN npm run generate:prisma
+
+CMD ["npm", "run", "test:e2e"]

@@ -24,7 +24,6 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/github_subscription_api?schema=public
-    command: ['npx', 'prisma', 'migrate', 'deploy']
 
   app:
     build:
