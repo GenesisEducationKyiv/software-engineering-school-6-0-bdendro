@@ -15,6 +15,17 @@ services:
       timeout: 3s
       retries: 5
 
+  migrate:
+    build:
+      context: .
+      target: migration
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/github_subscription_api?schema=public
+    command: ['npx', 'prisma', 'migrate', 'deploy']
+
   app:
     build:
       context: .
@@ -22,12 +33,13 @@ services:
     ports:
       - '${APP_PORT:-3000}:3000'
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     env_file:
       - .env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/github_subscription_api?schema=public
+      NODE_ENV: production
 
   test:
     build:
