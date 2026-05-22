@@ -84,7 +84,6 @@ services:
     environment:
       NODE_ENV: test
       APP_NAME: ${APP_NAME}
-      APP_PORT: ${APP_PORT}
       APP_BASE_URL: http://localhost:3000/api
       APP_CLIENT_BASE_URL: ${APP_CLIENT_BASE_URL}
       APP_TIMEZONE: ${APP_TIMEZONE}
