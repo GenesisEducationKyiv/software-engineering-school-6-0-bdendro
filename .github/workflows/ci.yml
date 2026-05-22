@@ -75,6 +75,25 @@ jobs:
     runs-on: ubuntu-latest
     needs: unit-tests
 
+    env:
+      NODE_ENV: test
+
+      APP_NAME: ${{ vars.APP_NAME }}
+      APP_BASE_URL: ${{ vars.TEST_APP_BASE_URL }}
+      APP_CLIENT_BASE_URL: ${{vars.TEST_APP_CLIENT_BASE_URL}}
+      APP_TIMEZONE: ${{ vars.APP_TIMEZONE }}
+
+      DATABASE_URL: ${{vars.TEST_DATABASE_URL}}
+
+      EMAIL: ${{ vars.TEST_EMAIL_USER }}
+      EMAIL_PASSWORD: ${{ vars.TEST_EMAIL_PASSWORD }}
+      EMAIL_HOST: ${{ vars.TEST_EMAIL_HOST }}
+      EMAIL_PORT: ${{ vars.TEST_EMAIL_PORT }}
+      EMAIL_SECURE: ${{ vars.TEST_EMAIL_SECURE }}
+
+      GITHUB_API_URL: ${{ vars.TEST_GH_API_URL }}
+      GITHUB_TOKEN: ${{ vars.TEST_GH_TOKEN }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -90,6 +109,28 @@ jobs:
     name: End-to-end Tests
     runs-on: ubuntu-latest
     needs: integration-tests
+
+    env:
+      NODE_ENV: test
+
+      APP_NAME: ${{ vars.APP_NAME }}
+      APP_BASE_URL: ${{ vars.TEST_APP_BASE_URL }}
+      APP_CLIENT_BASE_URL: ${{vars.TEST_APP_CLIENT_BASE_URL}}
+      APP_TIMEZONE: ${{ vars.APP_TIMEZONE }}
+
+      DATABASE_URL: ${{vars.TEST_DATABASE_URL}}
+
+      EMAIL: ${{ vars.TEST_EMAIL_USER }}
+      EMAIL_PASSWORD: ${{ vars.TEST_EMAIL_PASSWORD }}
+      EMAIL_HOST: ${{ vars.TEST_EMAIL_HOST }}
+      EMAIL_PORT: ${{ vars.TEST_EMAIL_PORT }}
+      EMAIL_SECURE: ${{ vars.TEST_EMAIL_SECURE }}
+
+      GITHUB_API_URL: ${{ vars.TEST_GH_API_URL }}
+      GITHUB_TOKEN: ${{ vars.TEST_GH_TOKEN }}
+
+      WIREMOCK_URL: ${{vars.TEST_WIREMOCK_URL}}
+      MAILPIT_URL: ${{vars.TEST_MAILPIT_URL}}
 
     steps:
       - name: Checkout repository
