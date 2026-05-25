@@ -97,7 +97,7 @@ The following infrastructure is started automatically:
 Run integration tests in Docker:
 
 ```bash
-docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-int test-int
+docker compose -f docker-compose.test.yml --env-file .env.test up --build --abort-on-container-exit --exit-code-from test-int test-int
 ```
 
 Clean up:
@@ -125,7 +125,7 @@ Mailpit replaces real email delivery.
 Run e2e tests in Docker:
 
 ```bash
-docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-e2e test-e2e
+docker compose -f docker-compose.test.yml --env-file .env.test up --build --abort-on-container-exit --exit-code-from test-e2e test-e2e
 ```
 
 Clean up:
@@ -145,13 +145,13 @@ docker compose -f docker-compose.test.yml up --build --abort-on-container-exit -
 or:
 
 ```bash
-docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-int test-int
+docker compose -f docker-compose.test.yml --env-file .env.test up --build --abort-on-container-exit --exit-code-from test-int test-int
 ```
 
 or:
 
 ```bash
-docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-e2e test-e2e
+docker compose -f docker-compose.test.yml --env-file .env.test up --build --abort-on-container-exit --exit-code-from test-e2e test-e2e
 ```
 
 Then always clean up:
