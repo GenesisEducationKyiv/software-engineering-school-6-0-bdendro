@@ -75,7 +75,7 @@ Unit tests do not require external infrastructure.
 Run unit tests in Docker:
 
 ```bash
-docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-unit test-unit
+docker compose -f docker-compose.test.yml --env-file .env.test up --build --abort-on-container-exit --exit-code-from test-unit test-unit
 ```
 
 Clean up:
@@ -139,7 +139,7 @@ docker compose -f docker-compose.test.yml down -v --remove-orphans
 Run the needed test type:
 
 ```bash
-docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-unit test-unit
+docker compose -f docker-compose.test.yml --env-file .env.test up --build --abort-on-container-exit --exit-code-from test-unit test-unit
 ```
 
 or:
