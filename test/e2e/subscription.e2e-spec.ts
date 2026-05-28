@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import type { APIRequestContext } from '@playwright/test';
 import {
   createGithubRepoReleaseResponse,
   createGithubRepoResponse,
@@ -23,15 +24,23 @@ test.describe('Subscription e2e creation', () => {
   let githubApiMock: GithubApiMock;
   let mailpitClient: MailpitClient;
 
-  test.beforeEach(async ({ page, request }) => {
+  async function cleanup(request: APIRequestContext) {
     githubApiMock = new GithubApiMock(wireMockBaseUrl, request);
     await githubApiMock.reset();
 
     mailpitClient = new MailpitClient(mailpitBaseUrl, request);
     await mailpitClient.clear();
+  }
+
+  test.beforeEach(async ({ page, request }) => {
+    await cleanup(request);
 
     subscriptionPage = new SubscriptionPage(page);
     await subscriptionPage.goto();
+  });
+
+  test.afterAll(async ({ request }) => {
+    await cleanup(request);
   });
 
   test('should render subscription page', async () => {

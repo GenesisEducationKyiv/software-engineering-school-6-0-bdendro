@@ -63,7 +63,7 @@ UNCONFIRMED_EXPIRATION_TIME=10m
 After any Docker test run, clean up containers, networks and test volumes:
 
 ```bash
-docker compose -f docker-compose.test.yml down -v --remove-orphans
+docker compose -f docker-compose.test.yml --env-file .env.test down -v
 ```
 
 This is important because test databases are disposable and should not keep state between runs.
@@ -75,13 +75,13 @@ Unit tests do not require external infrastructure.
 Run unit tests in Docker:
 
 ```bash
-docker compose -f docker-compose.test.yml --env-file .env.test up --build --abort-on-container-exit --exit-code-from test-unit test-unit
+docker compose -f docker-compose.test.yml --env-file .env.test run --rm --build test-unit
 ```
 
 Clean up:
 
 ```bash
-docker compose -f docker-compose.test.yml down -v --remove-orphans
+docker compose -f docker-compose.test.yml --env-file .env.test down -v
 ```
 
 ## Integration tests
@@ -97,13 +97,13 @@ The following infrastructure is started automatically:
 Run integration tests in Docker:
 
 ```bash
-docker compose -f docker-compose.test.yml --env-file .env.test up --build --abort-on-container-exit --exit-code-from test-int test-int
+docker compose -f docker-compose.test.yml --env-file .env.test run --rm --build test-int
 ```
 
 Clean up:
 
 ```bash
-docker compose -f docker-compose.test.yml down -v --remove-orphans
+docker compose -f docker-compose.test.yml --env-file .env.test down -v
 ```
 
 ## End-to-end tests
@@ -125,13 +125,13 @@ Mailpit replaces real email delivery.
 Run e2e tests in Docker:
 
 ```bash
-docker compose -f docker-compose.test.yml --env-file .env.test up --build --abort-on-container-exit --exit-code-from test-e2e test-e2e
+docker compose -f docker-compose.test.yml --env-file .env.test run --rm --build test-e2e
 ```
 
 Clean up:
 
 ```bash
-docker compose -f docker-compose.test.yml down -v --remove-orphans
+docker compose -f docker-compose.test.yml --env-file .env.test down -v
 ```
 
 ## Recommended workflow
@@ -139,23 +139,23 @@ docker compose -f docker-compose.test.yml down -v --remove-orphans
 Run the needed test type:
 
 ```bash
-docker compose -f docker-compose.test.yml --env-file .env.test up --build --abort-on-container-exit --exit-code-from test-unit test-unit
+docker compose -f docker-compose.test.yml --env-file .env.test run --rm --build test-unit
 ```
 
 or:
 
 ```bash
-docker compose -f docker-compose.test.yml --env-file .env.test up --build --abort-on-container-exit --exit-code-from test-int test-int
+docker compose -f docker-compose.test.yml --env-file .env.test run --rm --build test-int
 ```
 
 or:
 
 ```bash
-docker compose -f docker-compose.test.yml --env-file .env.test up --build --abort-on-container-exit --exit-code-from test-e2e test-e2e
+docker compose -f docker-compose.test.yml --env-file .env.test run --rm --build test-e2e
 ```
 
 Then always clean up:
 
 ```bash
-docker compose -f docker-compose.test.yml down -v --remove-orphans
+docker compose -f docker-compose.test.yml --env-file .env.test down -v
 ```
