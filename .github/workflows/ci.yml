@@ -4,7 +4,26 @@ on:
   push:
     branches: ['main']
   pull_request:
-    branches: ['main']
+    branches: ['feature/hw3-solid-grasp']
+
+env:
+  NODE_ENV: test
+
+  APP_NAME: ${{ vars.APP_NAME }}
+  APP_BASE_URL: ${{ vars.TEST_APP_BASE_URL }}
+  APP_CLIENT_BASE_URL: ${{vars.TEST_APP_CLIENT_BASE_URL}}
+  APP_TIMEZONE: ${{ vars.APP_TIMEZONE }}
+
+  DATABASE_URL: ${{vars.TEST_DATABASE_URL}}
+
+  EMAIL: ${{ secrets.TEST_EMAIL_USER }}
+  EMAIL_PASSWORD: ${{ secrets.TEST_EMAIL_PASSWORD }}
+  EMAIL_HOST: ${{ vars.TEST_EMAIL_HOST }}
+  EMAIL_PORT: ${{ vars.TEST_EMAIL_PORT }}
+  EMAIL_SECURE: ${{ vars.TEST_EMAIL_SECURE }}
+
+  GITHUB_API_URL: ${{ vars.TEST_GH_API_URL }}
+  GITHUB_TOKEN: ${{ secrets.TEST_GH_TOKEN }}
 
 jobs:
   quality:
@@ -75,31 +94,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: unit-tests
 
-    env:
-      NODE_ENV: test
-
-      APP_NAME: ${{ vars.APP_NAME }}
-      APP_BASE_URL: ${{ vars.TEST_APP_BASE_URL }}
-      APP_CLIENT_BASE_URL: ${{vars.TEST_APP_CLIENT_BASE_URL}}
-      APP_TIMEZONE: ${{ vars.APP_TIMEZONE }}
-
-      DATABASE_URL: ${{vars.TEST_DATABASE_URL}}
-
-      EMAIL: ${{ vars.TEST_EMAIL_USER }}
-      EMAIL_PASSWORD: ${{ vars.TEST_EMAIL_PASSWORD }}
-      EMAIL_HOST: ${{ vars.TEST_EMAIL_HOST }}
-      EMAIL_PORT: ${{ vars.TEST_EMAIL_PORT }}
-      EMAIL_SECURE: ${{ vars.TEST_EMAIL_SECURE }}
-
-      GITHUB_API_URL: ${{ vars.TEST_GH_API_URL }}
-      GITHUB_TOKEN: ${{ vars.TEST_GH_TOKEN }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
       - name: Run integration tests in Docker
-        run: docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-int test-int
+        run: docker compose -f docker-compose.test.yml run --rm --build test-int
 
       - name: Cleanup Docker test infrastructure
         if: always()
@@ -111,24 +111,6 @@ jobs:
     needs: integration-tests
 
     env:
-      NODE_ENV: test
-
-      APP_NAME: ${{ vars.APP_NAME }}
-      APP_BASE_URL: ${{ vars.TEST_APP_BASE_URL }}
-      APP_CLIENT_BASE_URL: ${{vars.TEST_APP_CLIENT_BASE_URL}}
-      APP_TIMEZONE: ${{ vars.APP_TIMEZONE }}
-
-      DATABASE_URL: ${{vars.TEST_DATABASE_URL}}
-
-      EMAIL: ${{ vars.TEST_EMAIL_USER }}
-      EMAIL_PASSWORD: ${{ vars.TEST_EMAIL_PASSWORD }}
-      EMAIL_HOST: ${{ vars.TEST_EMAIL_HOST }}
-      EMAIL_PORT: ${{ vars.TEST_EMAIL_PORT }}
-      EMAIL_SECURE: ${{ vars.TEST_EMAIL_SECURE }}
-
-      GITHUB_API_URL: ${{ vars.TEST_GH_API_URL }}
-      GITHUB_TOKEN: ${{ vars.TEST_GH_TOKEN }}
-
       WIREMOCK_URL: ${{vars.TEST_WIREMOCK_URL}}
       MAILPIT_URL: ${{vars.TEST_MAILPIT_URL}}
 
@@ -137,7 +119,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Run e2e tests in Docker
-        run: docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-e2e test-e2e
+        run: docker compose -f docker-compose.test.yml run --rm --build test-e2e
 
       - name: Cleanup Docker test infrastructure
         if: always()
