@@ -40,10 +40,13 @@ services:
         condition: service_completed_successfully
     env_file:
       - path: .env
-        required: false
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/github_subscription_api?schema=public
       NODE_ENV: production
+    logging:
+      options:
+        max-size: '10m'
+        max-file: '5'
     networks:
       - backend-net
 
@@ -52,4 +55,4 @@ volumes:
 
 networks:
   backend-net:
-    driver: bridge
+    external: true
