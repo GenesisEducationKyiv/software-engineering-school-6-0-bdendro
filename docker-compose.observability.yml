@@ -47,9 +47,44 @@ services:
       - backend-net
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:v3.12.0
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheusdata:/prometheus
+    networks:
+      - backend-net
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget -q --spider http://localhost:9090/-/healthy']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  grafana:
+    image: grafana/grafana:13.0.1
+    ports:
+      - '3001:3000'
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafanadata:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - backend-net
+    restart: unless-stopped
+
 volumes:
   esdata:
   filebeatdata:
+  prometheusdata:
+  grafanadata:
 
 networks:
   backend-net:
