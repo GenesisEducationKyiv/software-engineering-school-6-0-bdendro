@@ -52,7 +52,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "prometheus"
+                        "uid": "prometheus"
                       },
                       "spec": {
                         "expr": "sum(rate(http_requests_total{route=~\"$route\"}[1m]))",
@@ -103,7 +103,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "prometheus"
+                        "uid": "prometheus"
                       },
                       "spec": {
                         "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{route=~\"$route\"}[5m])) by (route, le))",
@@ -154,7 +154,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "prometheus"
+                        "uid": "prometheus"
                       },
                       "spec": {
                         "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{route=~\"$route\"}[5m])) by (le))",
@@ -205,7 +205,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "prometheus"
+                        "uid": "prometheus"
                       },
                       "spec": {
                         "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{route=~\"$route\"}[5m])) by (route, le))",
@@ -256,7 +256,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "prometheus"
+                        "uid": "prometheus"
                       },
                       "spec": {
                         "expr": "sum(rate(http_requests_total{route=~\"$route\"}[1m])) by (route)",
@@ -307,7 +307,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "prometheus"
+                        "uid": "prometheus"
                       },
                       "spec": {
                         "expr": "sum(rate(http_request_errors_total{route=~\"$route\"}[1m]))",
@@ -358,7 +358,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "prometheus"
+                        "uid": "prometheus"
                       },
                       "spec": {
                         "expr": "sum(rate(http_request_errors_total{route=~\"$route\"}[1m])) by (route)",
@@ -409,7 +409,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "prometheus"
+                        "uid": "prometheus"
                       },
                       "spec": {
                         "expr": "100 * sum(rate(http_request_errors_total{route=~\"$route\"}[5m])) / sum(rate(http_requests_total{route=~\"$route\"}[5m]))",
@@ -460,7 +460,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "prometheus"
+                        "uid": "prometheus"
                       },
                       "spec": {
                         "expr": "100 * sum(rate(http_request_errors_total{route=~\"$route\"}[5m])) by (route) / sum(rate(http_requests_total{route=~\"$route\"}[5m])) by (route)",
@@ -511,7 +511,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "prometheus"
+                        "uid": "prometheus"
                       },
                       "spec": {
                         "expr": "sum(rate(http_request_duration_seconds_sum{route=~\"$route\"}[5m])) / sum(rate(http_request_duration_seconds_count{route=~\"$route\"}[5m]))",
@@ -562,7 +562,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "prometheus"
+                        "uid": "prometheus"
                       },
                       "spec": {
                         "expr": "sum(rate(http_request_duration_seconds_sum{route=~\"$route\"}[5m])) by (route) / sum(rate(http_request_duration_seconds_count{route=~\"$route\"}[5m])) by (route)",
@@ -613,7 +613,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "prometheus"
+                        "uid": "prometheus"
                       },
                       "spec": {
                         "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{route=~\"$route\"}[5m])) by (le))",
@@ -841,7 +841,7 @@
             "group": "prometheus",
             "version": "v0",
             "datasource": {
-              "name": "prometheus"
+              "uid": "prometheus"
             },
             "spec": {
               "query": "label_values(http_requests_total, route)",
