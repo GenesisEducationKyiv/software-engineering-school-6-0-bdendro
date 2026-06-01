@@ -1,11 +1,13 @@
 import express, { Application, NextFunction, Request, Response } from 'express';
 import swaggerUi from 'swagger-ui-express';
 import { AppContainer } from './container';
-import { createRouter } from './routes';
+import { createApiRouter } from './routes';
 import { createErrorHandler } from './common/middlewares/error-handler';
 import helmet from 'helmet';
 import path, { join } from 'node:path';
 import { readFileSync } from 'node:fs';
+import { createMetricsRouter } from './metrics/metrics.router';
+import { httpMetrics } from './common/middlewares/http-metrics';
 
 const swaggerDocumentPath = join(__dirname, '..', 'docs', 'swagger.json');
 const swaggerDocument = JSON.parse(readFileSync(swaggerDocumentPath, 'utf8')) as Record<
@@ -23,7 +25,9 @@ export function createApp(container: AppContainer): Application {
 
   app.use(express.static(path.join(__dirname, '..', 'public')));
 
-  app.use('/api', createRouter(container.controllers));
+  app.use('/metrics', createMetricsRouter(container.controllers.metricsController));
+
+  app.use('/api', httpMetrics, createApiRouter(container.controllers));
 
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 

@@ -75,7 +75,8 @@ services:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_healthy
     networks:
       - backend-net
     restart: unless-stopped
