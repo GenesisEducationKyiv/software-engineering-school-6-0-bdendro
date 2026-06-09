@@ -4,10 +4,9 @@ import { SubscriptionServiceInterface } from './interfaces/subscription.service.
 import { SubscribeBody } from './schemas/subscription.schema';
 import { NotFoundError } from '../../common/utils/errors/custom-errors';
 import { SUBSCRIPTION_ERROR_MESSAGES } from './constants/error-messages';
-import { GithubServiceInterface } from '../github/index';
-import { GITHUB_ERROR_MESSAGES } from '../github/index';
+import { GithubServiceInterface, GITHUB_ERROR_MESSAGES } from '../github/index';
 import { Subscription } from './types/subscription';
-import { SubscriptionEmailServiceInterface } from '../notification/interfaces/subscription-email.service.interface';
+import { SubscriptionEmailServiceInterface } from '../notification/index';
 
 export class SubscriptionService implements SubscriptionServiceInterface {
   constructor(
