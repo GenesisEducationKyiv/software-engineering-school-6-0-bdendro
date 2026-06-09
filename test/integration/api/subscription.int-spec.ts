@@ -3,8 +3,8 @@ import nock from 'nock';
 import { createApp } from '../../../src/app';
 import { createContainer } from '../../../src/container';
 import { env } from '../../../src/config/env';
-import type { DBClient } from '../../../src/config/prisma';
-import type { AppLogger } from '../../../src/common/modules/logger/interfaces/logger.interface';
+import type { PrismaDBClient } from '../../../src/infrastructure/database/prisma';
+import type { AppLogger } from '../../../src/infrastructure/logger/interfaces/logger.interface';
 import { EMAIL } from '../../../src/email/constants/email.const';
 import type { SubscribeBody } from '../../../src/subscriptions/schemas/subscription.schema';
 import type { SubscriptionCreateInput } from '../../../src/generated/prisma/models';
@@ -98,7 +98,7 @@ const createGithubReleaseResponse = (
 };
 
 class SubscriptionTestDb {
-  constructor(private readonly prisma: DBClient) {}
+  constructor(private readonly prisma: PrismaDBClient) {}
 
   async clear(): Promise<void> {
     await this.prisma.subscription.deleteMany();
@@ -137,7 +137,7 @@ class SubscriptionTestDb {
 }
 
 describe('Subscriptions API', () => {
-  let prisma: DBClient;
+  let prisma: PrismaDBClient;
   let db: SubscriptionTestDb;
   let app: Application;
   let githubRateLimiter: GithubRateLimiterInterface;

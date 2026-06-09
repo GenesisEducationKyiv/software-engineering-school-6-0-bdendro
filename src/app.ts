@@ -6,7 +6,7 @@ import { createErrorHandler } from './common/middlewares/error-handler';
 import helmet from 'helmet';
 import path, { join } from 'node:path';
 import { readFileSync } from 'node:fs';
-import { createMetricsRouter } from './metrics/metrics.router';
+import { createMetricsRouter } from './infrastructure/metrics/metrics.router';
 import { httpMetrics } from './common/middlewares/http-metrics';
 
 const swaggerDocumentPath = join(__dirname, '..', 'docs', 'swagger.json');

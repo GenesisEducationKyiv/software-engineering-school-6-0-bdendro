@@ -3,7 +3,7 @@ import {
   httpRequestDurationSeconds,
   httpRequestErrorsTotal,
   httpRequestsTotal,
-} from '../../metrics/metrics.registry';
+} from '../../infrastructure/metrics/metrics.registry';
 
 type RequestRoute = { path: string | RegExp | (RegExp | string)[] } | undefined;
 

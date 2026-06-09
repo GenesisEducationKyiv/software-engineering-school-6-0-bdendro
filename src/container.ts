@@ -1,9 +1,9 @@
 import ms from 'ms';
-import { AppLogger } from './common/modules/logger/interfaces/logger.interface';
-import { PinoLogger } from './common/modules/logger/pino-logger';
+import { AppLogger } from './infrastructure/logger/interfaces/logger.interface';
+import { PinoLogger } from './infrastructure/logger/pino-logger';
 import { Env } from './config/env';
-import { createLoggerConfig } from './config/logger';
-import { createPrismaClient, DBClient } from './config/prisma';
+import { createLoggerConfig } from './config/logger.config';
+import { createPrismaClient, PrismaDBClient } from './infrastructure/database/prisma';
 import { EmailProvider } from './email/email.provider';
 import { EmailService } from './email/email.service';
 import { EmailProviderInterface } from './email/interfaces/email.provider.interface';
@@ -20,11 +20,11 @@ import { SubscriptionService } from './subscriptions/subscription.service';
 import { GithubClientMapper } from './github/mappers/github-client.mapper';
 import { SubscriptionPrismaMapper } from './subscriptions/mappers/subscription-prisma.mapper';
 import { SubscriptionControllerMapper } from './subscriptions/mappers/subscription-controller.mapper';
-import { MetricsController } from './metrics/metrics.controller';
+import { MetricsController } from './infrastructure/metrics/metrics.controller';
 
 export type ContainerOverrides = Partial<{
   logger: AppLogger;
-  prisma: DBClient;
+  prisma: PrismaDBClient;
   emailProvider: EmailProviderInterface;
   githubClient: GithubClientInterface;
 }>;

@@ -1,7 +1,7 @@
 import cron, { ScheduledTask } from 'node-cron';
 import { SCHEDULE } from './constants/schedule.const';
 import type { Env } from '../config/env';
-import { AppLogger } from '../common/modules/logger/interfaces/logger.interface';
+import { AppLogger } from '../infrastructure/logger/interfaces/logger.interface';
 import { JobInterface } from './interfaces/job.interface';
 
 export class JobsManager {

@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { ExternalServiceError, HttpError, ValidationError } from '../utils/errors/custom-errors';
 import { isRequestBodyParseError } from '../utils/errors/parse-body-error';
-import { AppLogger } from '../modules/logger/interfaces/logger.interface';
+import { AppLogger } from '../../infrastructure/logger/interfaces/logger.interface';
 
 export function createErrorHandler(logger: AppLogger) {
   return function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {

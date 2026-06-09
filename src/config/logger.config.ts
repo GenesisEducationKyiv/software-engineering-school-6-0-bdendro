@@ -1,5 +1,5 @@
 import { ENV } from '../common/constants/env';
-import { LoggerConfig } from '../common/modules/logger/interfaces/logger.interface';
+import { LoggerConfig } from '../infrastructure/logger/interfaces/logger.interface';
 import { Env } from './env';
 
 const LOG_LEVELS_BY_ENV = {
@@ -8,7 +8,9 @@ const LOG_LEVELS_BY_ENV = {
   [ENV.PRODUCTION]: 'info',
 } as const;
 
-export function createLoggerConfig(env: Env): LoggerConfig {
+type LoggerConfigEnv = Pick<Env, 'APP_NAME' | 'NODE_ENV'>;
+
+export function createLoggerConfig(env: LoggerConfigEnv): LoggerConfig {
   return {
     appName: env.APP_NAME,
     level: LOG_LEVELS_BY_ENV[env.NODE_ENV],

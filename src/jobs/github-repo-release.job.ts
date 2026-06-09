@@ -1,4 +1,4 @@
-import { AppLogger } from '../common/modules/logger/interfaces/logger.interface';
+import { AppLogger } from '../infrastructure/logger/interfaces/logger.interface';
 import { ConflictError, GithubError, NotFoundError } from '../common/utils/errors/custom-errors';
 import { GithubReleaseEmailServiceInterface } from '../email/interfaces/github-release-email.service.interface';
 import { GithubServiceInterface } from '../github/interfaces/github.service.interface';

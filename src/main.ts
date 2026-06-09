@@ -2,8 +2,8 @@ import { env } from './config/env';
 import { createApp } from './app';
 import { createContainer } from './container';
 import { EMAIL_VERIFICATION_ERROR_KIND } from './email/constants/email-provider';
-import { createLoggerConfig } from './config/logger';
-import { PinoLogger } from './common/modules/logger/pino-logger';
+import { createLoggerConfig } from './config/logger.config';
+import { PinoLogger } from './infrastructure/logger/pino-logger';
 
 const logger = new PinoLogger(createLoggerConfig(env));
 
