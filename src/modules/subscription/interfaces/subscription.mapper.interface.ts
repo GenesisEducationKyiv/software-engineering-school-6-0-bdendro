@@ -1,4 +1,4 @@
-import { Subscription as PrismaSubscription } from '../../generated/prisma/client';
+import { Subscription as PrismaSubscription } from '../../../generated/prisma/client';
 import { SubscriptionResponse } from '../dto/subscription.response.dto';
 import { Subscription } from '../types/subscription';
 

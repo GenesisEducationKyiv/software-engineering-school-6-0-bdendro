@@ -1,7 +1,7 @@
 import { env } from './config/env';
 import { createApp } from './app';
 import { createContainer } from './container';
-import { EMAIL_VERIFICATION_ERROR_KIND } from './email/constants/email-provider';
+import { EMAIL_VERIFICATION_ERROR_KIND } from './modules/notification/constants/email-provider';
 import { createLoggerConfig } from './config/logger.config';
 import { PinoLogger } from './infrastructure/logger/pino-logger';
 

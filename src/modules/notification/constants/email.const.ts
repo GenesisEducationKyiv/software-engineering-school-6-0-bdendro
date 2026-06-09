@@ -1,4 +1,4 @@
-import { SUBSCRIPTION_ROUTE_PATHS } from '../../subscriptions/constants/subscriptions.const';
+import { SUBSCRIPTION_ROUTE_PATHS } from '../../subscription/constants/subscriptions.const';
 
 export const EMAIL = {
   CONFIRMATION_PATH: SUBSCRIPTION_ROUTE_PATHS.CONFIRM,

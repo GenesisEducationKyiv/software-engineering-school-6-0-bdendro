@@ -3,9 +3,9 @@ import {
   RequestWithValidatedBody,
   RequestWithValidatedParams,
   RequestWithValidatedQuery,
-} from '../../common/types/validated-request';
+} from '../../../common/types/validated-request';
 import { SubscribeBody, SubscriptionsQuery, TokenParams } from '../schemas/subscription.schema';
-import { ResponseMessage } from '../../common/types/response';
+import { ResponseMessage } from '../../../common/types/response';
 import { SubscriptionResponse } from '../dto/subscription.response.dto';
 
 export interface SubscriptionControllerInterface {

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { GithubRateLimiterInterface } from '../../github/utils/github-rate-limiter';
+import { GithubRateLimiterInterface } from '../../modules/github/utils/github-rate-limiter';
 import { GithubError } from '../utils/errors/custom-errors';
 import { AppLogger } from '../../infrastructure/logger/interfaces/logger.interface';
 

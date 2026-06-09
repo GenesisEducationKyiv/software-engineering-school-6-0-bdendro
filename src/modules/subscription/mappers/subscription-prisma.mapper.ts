@@ -1,4 +1,4 @@
-import { Subscription as PrismaSubscription } from '../../generated/prisma/client';
+import { Subscription as PrismaSubscription } from '../../../generated/prisma/client';
 import { SubscriptionPrismaMapperInterface } from '../interfaces/subscription.mapper.interface';
 import { Subscription } from '../types/subscription';
 

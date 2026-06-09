@@ -1,10 +1,14 @@
-import { AppLogger } from '../infrastructure/logger/interfaces/logger.interface';
-import { ConflictError, GithubError, NotFoundError } from '../common/utils/errors/custom-errors';
-import { GithubReleaseEmailServiceInterface } from '../email/interfaces/github-release-email.service.interface';
-import { GithubServiceInterface } from '../github/interfaces/github.service.interface';
-import { GithubRateLimiterInterface } from '../github/utils/github-rate-limiter';
-import { SubscriptionServiceInterface } from '../subscriptions/interfaces/subscription.service.interface';
-import { JobInterface } from './interfaces/job.interface';
+import { AppLogger } from '../../../infrastructure/logger/interfaces/logger.interface';
+import {
+  ConflictError,
+  GithubError,
+  NotFoundError,
+} from '../../../common/utils/errors/custom-errors';
+import { GithubReleaseEmailServiceInterface } from '../../notification/interfaces/github-release-email.service.interface';
+import { GithubServiceInterface } from '../../github/interfaces/github.service.interface';
+import { GithubRateLimiterInterface } from '../../github/utils/github-rate-limiter';
+import { SubscriptionServiceInterface } from '../interfaces/subscription.service.interface';
+import { JobInterface } from '../../../jobs/interfaces/job.interface';
 
 export class GithubReleaseNotificationJob implements JobInterface {
   constructor(

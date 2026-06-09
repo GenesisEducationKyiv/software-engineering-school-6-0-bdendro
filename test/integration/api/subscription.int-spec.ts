@@ -5,15 +5,15 @@ import { createContainer } from '../../../src/container';
 import { env } from '../../../src/config/env';
 import type { PrismaDBClient } from '../../../src/infrastructure/database/prisma';
 import type { AppLogger } from '../../../src/infrastructure/logger/interfaces/logger.interface';
-import { EMAIL } from '../../../src/email/constants/email.const';
-import type { SubscribeBody } from '../../../src/subscriptions/schemas/subscription.schema';
+import { EMAIL } from '../../../src/modules/notification/constants/email.const';
+import type { SubscribeBody } from '../../../src/modules/subscription/schemas/subscription.schema';
 import type { SubscriptionCreateInput } from '../../../src/generated/prisma/models';
 import type {
   GithubLatestReleaseApiResponse as GithubLatestReleaseApiFullResponse,
   GithubRepositoryApiResponse as GithubRepositoryApiFullResponse,
-} from '../../../src/github/dto/github-api.response.dto';
+} from '../../../src/modules/github/dto/github-api.response.dto';
 import type { Application } from 'express';
-import { GithubRateLimiterInterface } from '../../../src/github/utils/github-rate-limiter';
+import { GithubRateLimiterInterface } from '../../../src/modules/github/utils/github-rate-limiter';
 import { randomUUID } from 'node:crypto';
 
 const transporterMock = {

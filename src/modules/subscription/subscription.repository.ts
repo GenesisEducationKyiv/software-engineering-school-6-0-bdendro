@@ -1,8 +1,8 @@
-import { ConflictError } from '../common/utils/errors/custom-errors';
-import { Prisma, PrismaClient } from '../generated/prisma/client';
+import { ConflictError } from '../../common/utils/errors/custom-errors';
+import { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { Subscription } from './types/subscription';
 import { SUBSCRIPTION_ERROR_MESSAGES } from './constants/error-messages';
-import { PRISMA_ERROR_CODES } from '../infrastructure/database/constants/prisma';
+import { PRISMA_ERROR_CODES } from '../../infrastructure/database/constants/prisma';
 import {
   SubscribeReq,
   SubscriptionRepositoryInterface,

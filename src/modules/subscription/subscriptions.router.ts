@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { SUBSCRIPTION_ROUTE_PATHS } from './constants/subscriptions.const';
 import { SubscriptionControllerInterface } from './interfaces/subscription.controller.interface';
-import { validateRequest } from '../common/middlewares/validate-request';
+import { validateRequest } from '../../common/middlewares/validate-request';
 import {
   SubscribeBody,
   subscribeBodySchema,
@@ -14,7 +14,7 @@ import {
   RequestWithValidatedBody,
   RequestWithValidatedParams,
   RequestWithValidatedQuery,
-} from '../common/types/validated-request';
+} from '../../common/types/validated-request';
 
 export function createSubscriptionRouter(
   subscriptionController: SubscriptionControllerInterface,

@@ -2,12 +2,12 @@ import { randomUUID } from 'node:crypto';
 import { SubscriptionRepositoryInterface } from './interfaces/subscription.repository.interface';
 import { SubscriptionServiceInterface } from './interfaces/subscription.service.interface';
 import { SubscribeBody } from './schemas/subscription.schema';
-import { NotFoundError } from '../common/utils/errors/custom-errors';
+import { NotFoundError } from '../../common/utils/errors/custom-errors';
 import { SUBSCRIPTION_ERROR_MESSAGES } from './constants/error-messages';
-import { GithubServiceInterface } from '../github/interfaces/github.service.interface';
-import { GITHUB_ERROR_MESSAGES } from '../github/constants/error-messages';
+import { GithubServiceInterface } from '../github/index';
+import { GITHUB_ERROR_MESSAGES } from '../github/index';
 import { Subscription } from './types/subscription';
-import { SubscriptionEmailServiceInterface } from '../email/interfaces/subscription-email.service.interface';
+import { SubscriptionEmailServiceInterface } from '../notification/interfaces/subscription-email.service.interface';
 
 export class SubscriptionService implements SubscriptionServiceInterface {
   constructor(

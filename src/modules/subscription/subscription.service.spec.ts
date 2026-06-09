@@ -1,9 +1,9 @@
-import { NotFoundError } from '../common/utils/errors/custom-errors';
-import { GithubServiceInterface } from '../github/interfaces/github.service.interface';
+import { NotFoundError } from '../../common/utils/errors/custom-errors';
+import { GithubServiceInterface } from '../github/index';
 import { SubscriptionRepositoryInterface } from './interfaces/subscription.repository.interface';
 import { SubscriptionService } from './subscription.service';
-import { SubscriptionEmailServiceInterface } from '../email/interfaces/subscription-email.service.interface';
-import { GithubRelease } from '../github/types/github-release';
+import { SubscriptionEmailServiceInterface } from '../notification/interfaces/subscription-email.service.interface';
+import { GithubRelease } from '../github/index';
 import { SubscribeBody } from './schemas/subscription.schema';
 import { Subscription } from './types/subscription';
 

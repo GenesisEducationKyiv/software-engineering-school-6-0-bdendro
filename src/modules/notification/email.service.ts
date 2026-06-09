@@ -1,4 +1,4 @@
-import { GithubRelease } from '../github/types/github-release';
+import { GithubRelease } from '../github/index';
 import { EMAIL } from './constants/email.const';
 import { EmailProviderInterface } from './interfaces/email.provider.interface';
 import { GithubReleaseEmailServiceInterface } from './interfaces/github-release-email.service.interface';

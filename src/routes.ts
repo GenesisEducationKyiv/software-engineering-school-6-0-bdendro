@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { AppContainer } from './container';
-import { createSubscriptionRouter } from './subscriptions/subscriptions.router';
+import { createSubscriptionRouter } from './modules/subscription/subscriptions.router';
 
 export function createApiRouter(controllers: AppContainer['controllers']): Router {
   const router = Router();
