@@ -1,10 +1,10 @@
-import { SUBSCRIPTION_ROUTE_PATHS } from '../../subscription/constants/subscriptions.const';
-
 export const EMAIL = {
-  CONFIRMATION_PATH: SUBSCRIPTION_ROUTE_PATHS.CONFIRM,
-  UNSUBSCRIBE_PATH: SUBSCRIPTION_ROUTE_PATHS.UNSUBSCRIBE,
   SUBJECT_CONFIRMATION: 'GitHub Repository subscription confirmation',
   SUBJECT_REPO: 'GitHub Repository update report',
   SUBJECT_CONFIRMED: 'GitHub Repository subscription confirmed',
   SUBJECT_CANCELED: 'GitHub Repository subscription canceled',
-};
+} as const;
+
+export const NOTIFICATION_SERVICE_NAMES = {
+  EMAIL: 'Email',
+} as const;

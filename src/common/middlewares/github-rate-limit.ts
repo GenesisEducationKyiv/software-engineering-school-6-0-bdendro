@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { GithubRateLimiterInterface } from '../../modules/github/utils/github-rate-limiter';
-import { GithubError } from '../utils/errors/custom-errors';
-import { AppLogger } from '../../infrastructure/logger/interfaces/logger.interface';
+import { GithubError } from '../../../libs/common/utils/errors/custom-errors';
+import { AppLogger } from '../../../libs/infrastructure/logger/interfaces/logger.interface';
 
 export function getGithubRateLimitMiddleware(
   githubRateLimiter: GithubRateLimiterInterface,

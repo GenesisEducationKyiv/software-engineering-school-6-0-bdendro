@@ -6,8 +6,8 @@ import { createErrorHandler } from './common/middlewares/error-handler';
 import helmet from 'helmet';
 import path, { join } from 'node:path';
 import { readFileSync } from 'node:fs';
-import { createMetricsRouter } from './infrastructure/metrics/metrics.router';
-import { httpMetrics } from './common/middlewares/http-metrics';
+import { createMetricsRouter } from '../libs/infrastructure/metrics/metrics.router';
+import { httpMetrics } from '../libs/common/middlewares/http-metrics';
 
 const swaggerDocumentPath = join(__dirname, '..', 'docs', 'swagger.json');
 const swaggerDocument = JSON.parse(readFileSync(swaggerDocumentPath, 'utf8')) as Record<

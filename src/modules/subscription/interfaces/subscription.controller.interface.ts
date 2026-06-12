@@ -3,25 +3,25 @@ import {
   RequestWithValidatedBody,
   RequestWithValidatedParams,
   RequestWithValidatedQuery,
-} from '../../../common/types/validated-request';
+} from '../../../../libs/common/types/validated-request';
 import { SubscribeBody, SubscriptionsQuery, TokenParams } from '../schemas/subscription.schema';
-import { ResponseMessage } from '../../../common/types/response';
+import { MessageResponse } from '../../../../libs/common/types/response';
 import { SubscriptionResponse } from '../dto/subscription.response.dto';
 
 export interface SubscriptionControllerInterface {
   subscribe(
     req: RequestWithValidatedBody<SubscribeBody>,
-    res: Response<ResponseMessage>,
+    res: Response<MessageResponse>,
   ): Promise<void>;
 
   confirm(
     req: RequestWithValidatedParams<TokenParams>,
-    res: Response<ResponseMessage>,
+    res: Response<MessageResponse>,
   ): Promise<void>;
 
   unsubscribe(
     req: RequestWithValidatedParams<TokenParams>,
-    res: Response<ResponseMessage>,
+    res: Response<MessageResponse>,
   ): Promise<void>;
 
   getSubscriptionsByEmail(

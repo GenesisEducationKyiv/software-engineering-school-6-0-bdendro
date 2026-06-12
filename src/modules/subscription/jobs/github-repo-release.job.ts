@@ -1,22 +1,24 @@
-import { AppLogger } from '../../../infrastructure/logger/interfaces/logger.interface';
+import { AppLogger } from '../../../../libs/infrastructure/logger/interfaces/logger.interface';
 import {
   ConflictError,
   GithubError,
   NotFoundError,
-} from '../../../common/utils/errors/custom-errors';
-import { GithubReleaseEmailServiceInterface } from '../../notification/interfaces/github-release-email.service.interface';
+} from '../../../../libs/common/utils/errors/custom-errors';
 import { GithubServiceInterface } from '../../github/interfaces/github.service.interface';
 import { GithubRateLimiterInterface } from '../../github/utils/github-rate-limiter';
 import { SubscriptionServiceInterface } from '../interfaces/subscription.service.interface';
 import { JobInterface } from '../../../jobs/interfaces/job.interface';
+import { buildUnsubscribeUrl } from '../utils/build-url';
+import { RepositoryReleaseNotificationSenderInterface } from '../../../infrastructure/notification/interfaces/repository-release-email.sender.interface';
 
 export class GithubReleaseNotificationJob implements JobInterface {
   constructor(
     private readonly githubService: GithubServiceInterface,
     private readonly subscriptionService: SubscriptionServiceInterface,
-    private readonly emailService: GithubReleaseEmailServiceInterface,
+    private readonly notificationSender: RepositoryReleaseNotificationSenderInterface,
     private readonly githubRateLimiter: GithubRateLimiterInterface,
     private readonly logger: AppLogger,
+    private readonly baseUrl: string,
   ) {}
   async run(): Promise<void> {
     this.logger.info('GitHub repository release notification execution.');
@@ -47,7 +49,12 @@ export class GithubReleaseNotificationJob implements JobInterface {
       try {
         const release = await this.githubService.getLastRelease(sub.repo);
         if (release !== null && release.tagName !== sub.lastSeenTag) {
-          await this.emailService.sendGitHubReleaseEmail(sub.email, release, sub.token);
+          const unsubscribeUrl = buildUnsubscribeUrl(this.baseUrl, sub.token);
+          await this.notificationSender.sendRepositoryReleaseNotification(
+            sub.email,
+            release,
+            unsubscribeUrl,
+          );
           try {
             await this.subscriptionService.updateLastSeenTagByToken(sub.token, release.tagName);
           } catch (err) {

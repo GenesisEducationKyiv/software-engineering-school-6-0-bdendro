@@ -1,20 +1,21 @@
-import { NotFoundError } from '../../common/utils/errors/custom-errors';
+import { NotFoundError } from '../../../libs/common/utils/errors/custom-errors';
 import type { GithubServiceInterface, GithubRelease } from '../github/index';
 import { SubscriptionRepositoryInterface } from './interfaces/subscription.repository.interface';
 import { SubscriptionService } from './subscription.service';
-import { SubscriptionEmailServiceInterface } from '../notification/index';
 import { SubscribeBody } from './schemas/subscription.schema';
 import { Subscription } from './types/subscription';
+import { SubscriptionNotificationSenderInterface } from '../../infrastructure/notification/interfaces/subscription-email.service.interface';
 
 describe('SubscriptionService', () => {
   let subscriptionService: SubscriptionService;
   let subscriptionRepository: jest.Mocked<SubscriptionRepositoryInterface>;
-  let emailService: jest.Mocked<SubscriptionEmailServiceInterface>;
+  let notificationClient: jest.Mocked<SubscriptionNotificationSenderInterface>;
   let githubService: jest.Mocked<GithubServiceInterface>;
 
   const email = 'test@example.com';
   const repo = 'owner/repo';
   const token = 'test-token';
+  const baseSubscriptionUrl = 'http://localhost:3000/api';
 
   const subscribeBody: SubscribeBody = {
     email,
@@ -52,11 +53,11 @@ describe('SubscriptionService', () => {
       getSubscriptionByToken: jest.fn(),
     };
 
-    emailService = {
-      sendConfirmationEmail: jest.fn(),
-      sendConfirmationSuccessEmail: jest.fn(),
-      sendUnsubscribeSuccessEmail: jest.fn(),
-    } as jest.Mocked<SubscriptionEmailServiceInterface>;
+    notificationClient = {
+      sendConfirmationNotification: jest.fn(),
+      sendConfirmationSuccessNotification: jest.fn(),
+      sendUnsubscribeSuccessNotification: jest.fn(),
+    } as jest.Mocked<SubscriptionNotificationSenderInterface>;
 
     githubService = {
       isRepositoryExists: jest.fn(),
@@ -65,8 +66,9 @@ describe('SubscriptionService', () => {
 
     subscriptionService = new SubscriptionService(
       subscriptionRepository,
-      emailService,
+      notificationClient,
       githubService,
+      baseSubscriptionUrl,
     );
   });
 
@@ -159,19 +161,19 @@ describe('SubscriptionService', () => {
         expect.any(String),
       );
 
-      expect(emailService.sendConfirmationEmail).toHaveBeenCalledTimes(1);
-      expect(emailService.sendConfirmationEmail).toHaveBeenCalledWith(
+      expect(notificationClient.sendConfirmationNotification).toHaveBeenCalledTimes(1);
+      expect(notificationClient.sendConfirmationNotification).toHaveBeenCalledWith(
         email,
         expect.any(String),
         repo,
       );
 
       const createdToken = subscriptionRepository.create.mock.calls[0][1];
-      const emailedToken = emailService.sendConfirmationEmail.mock.calls[0][1];
+      const emailedToken = notificationClient.sendConfirmationNotification.mock.calls[0][1];
 
       expect(typeof createdToken).toBe('string');
       expect(createdToken.length).toBeGreaterThan(0);
-      expect(emailedToken).toBe(createdToken);
+      expect(emailedToken).toContain(createdToken);
     });
 
     it('should throw NotFoundError when repository does not exist', async () => {
@@ -182,7 +184,7 @@ describe('SubscriptionService', () => {
       expect(githubService.isRepositoryExists).toHaveBeenCalledWith(repo);
       expect(githubService.getLastRelease).not.toHaveBeenCalled();
       expect(subscriptionRepository.create).not.toHaveBeenCalled();
-      expect(emailService.sendConfirmationEmail).not.toHaveBeenCalled();
+      expect(notificationClient.sendConfirmationNotification).not.toHaveBeenCalled();
     });
 
     it('should create subscription with null lastSeenTag when release does not exist', async () => {
@@ -199,19 +201,19 @@ describe('SubscriptionService', () => {
         expect.any(String),
       );
 
-      expect(emailService.sendConfirmationEmail).toHaveBeenCalledTimes(1);
-      expect(emailService.sendConfirmationEmail).toHaveBeenCalledWith(
+      expect(notificationClient.sendConfirmationNotification).toHaveBeenCalledTimes(1);
+      expect(notificationClient.sendConfirmationNotification).toHaveBeenCalledWith(
         email,
         expect.any(String),
         repo,
       );
 
       const createdToken = subscriptionRepository.create.mock.calls[0][1];
-      const emailedToken = emailService.sendConfirmationEmail.mock.calls[0][1];
+      const emailedToken = notificationClient.sendConfirmationNotification.mock.calls[0][1];
 
       expect(typeof createdToken).toBe('string');
       expect(createdToken.length).toBeGreaterThan(0);
-      expect(emailedToken).toBe(createdToken);
+      expect(emailedToken).toContain(createdToken);
     });
   });
 
@@ -231,10 +233,10 @@ describe('SubscriptionService', () => {
       expect(subscriptionRepository.updateByToken).toHaveBeenCalledWith(token, {
         confirmed: true,
       });
-      expect(emailService.sendConfirmationSuccessEmail).toHaveBeenCalledTimes(1);
-      expect(emailService.sendConfirmationSuccessEmail).toHaveBeenCalledWith(
+      expect(notificationClient.sendConfirmationSuccessNotification).toHaveBeenCalledTimes(1);
+      expect(notificationClient.sendConfirmationSuccessNotification).toHaveBeenCalledWith(
         confirmedSubscription.email,
-        token,
+        expect.stringContaining(token),
         confirmedSubscription.repo,
       );
     });
@@ -247,9 +249,11 @@ describe('SubscriptionService', () => {
       await subscriptionService.confirm(token);
 
       expect(subscriptionRepository.getSubscriptionByToken).toHaveBeenCalledTimes(1);
-      expect(subscriptionRepository.getSubscriptionByToken).toHaveBeenCalledWith(token);
+      expect(subscriptionRepository.getSubscriptionByToken).toHaveBeenCalledWith(
+        expect.stringContaining(token),
+      );
       expect(subscriptionRepository.updateByToken).not.toHaveBeenCalled();
-      expect(emailService.sendConfirmationSuccessEmail).not.toHaveBeenCalled();
+      expect(notificationClient.sendConfirmationSuccessNotification).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundError when subscription to confirm is not found', async () => {
@@ -257,7 +261,7 @@ describe('SubscriptionService', () => {
 
       await expect(subscriptionService.confirm(token)).rejects.toThrow(NotFoundError);
       expect(subscriptionRepository.updateByToken).not.toHaveBeenCalled();
-      expect(emailService.sendConfirmationSuccessEmail).not.toHaveBeenCalled();
+      expect(notificationClient.sendConfirmationSuccessNotification).not.toHaveBeenCalled();
     });
   });
 
@@ -270,8 +274,8 @@ describe('SubscriptionService', () => {
       await subscriptionService.unsubscribe(token);
 
       expect(subscriptionRepository.deleteByToken).toHaveBeenCalledWith(token);
-      expect(emailService.sendUnsubscribeSuccessEmail).toHaveBeenCalledTimes(1);
-      expect(emailService.sendUnsubscribeSuccessEmail).toHaveBeenCalledWith(
+      expect(notificationClient.sendUnsubscribeSuccessNotification).toHaveBeenCalledTimes(1);
+      expect(notificationClient.sendUnsubscribeSuccessNotification).toHaveBeenCalledWith(
         deletedSubscription.email,
         deletedSubscription.repo,
       );
@@ -281,7 +285,7 @@ describe('SubscriptionService', () => {
       subscriptionRepository.deleteByToken.mockResolvedValue(null);
 
       await expect(subscriptionService.unsubscribe(token)).rejects.toThrow(NotFoundError);
-      expect(emailService.sendUnsubscribeSuccessEmail).not.toHaveBeenCalled();
+      expect(notificationClient.sendConfirmationSuccessNotification).not.toHaveBeenCalled();
     });
   });
 

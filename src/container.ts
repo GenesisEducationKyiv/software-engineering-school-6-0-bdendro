@@ -1,12 +1,9 @@
 import ms from 'ms';
-import { AppLogger } from './infrastructure/logger/interfaces/logger.interface';
-import { PinoLogger } from './infrastructure/logger/pino-logger';
+import { AppLogger } from '../libs/infrastructure/logger/interfaces/logger.interface';
+import { PinoLogger } from '../libs/infrastructure/logger/pino-logger';
 import { Env } from './config/env';
 import { createLoggerConfig } from './config/logger.config';
 import { createPrismaClient, PrismaDBClient } from './infrastructure/database/prisma';
-import { EmailProvider } from './modules/notification/email.provider';
-import { EmailService } from './modules/notification/email.service';
-import { EmailProviderInterface } from './modules/notification/interfaces/email.provider.interface';
 import { GithubClient } from './modules/github/github.client';
 import { GithubService } from './modules/github/github.service';
 import { GithubClientInterface } from './modules/github/interfaces/github.client.interface';
@@ -20,12 +17,19 @@ import { SubscriptionService } from './modules/subscription/subscription.service
 import { GithubClientMapper } from './modules/github/mappers/github-client.mapper';
 import { SubscriptionPrismaMapper } from './modules/subscription/mappers/subscription-prisma.mapper';
 import { SubscriptionControllerMapper } from './modules/subscription/mappers/subscription-controller.mapper';
-import { MetricsController } from './infrastructure/metrics/metrics.controller';
+import { MetricsController } from '../libs/infrastructure/metrics/metrics.controller';
+import { SubscriptionNotificationSenderInterface } from './infrastructure/notification/interfaces/subscription-email.service.interface';
+import { RepositoryReleaseNotificationSenderInterface } from './infrastructure/notification/interfaces/repository-release-email.sender.interface';
+import { NotificationClient } from './infrastructure/notification/notification.client';
+import { NotificationClientMapper } from './infrastructure/notification/notification.mapper';
+
+type NotificationSender = SubscriptionNotificationSenderInterface &
+  RepositoryReleaseNotificationSenderInterface;
 
 export type ContainerOverrides = Partial<{
   logger: AppLogger;
   prisma: PrismaDBClient;
-  emailProvider: EmailProviderInterface;
+  notificationClient: NotificationSender;
   githubClient: GithubClientInterface;
 }>;
 
@@ -34,8 +38,9 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
 
   const prisma = overrides?.prisma || createPrismaClient(env.DATABASE_URL);
 
-  const emailProvider = overrides?.emailProvider || new EmailProvider(env);
-  const emailService = new EmailService(emailProvider, env.APP_BASE_URL);
+  const notificationMapper = new NotificationClientMapper();
+  const notificationClient =
+    overrides?.notificationClient || new NotificationClient(env, notificationMapper);
 
   const githubRateLimiter = new GithubRateLimiter();
   const githubClientMapper = new GithubClientMapper();
@@ -47,8 +52,9 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   const subscriptionRepository = new SubscriptionRepository(prisma, subscriptionRepositoryMapper);
   const subscriptionService = new SubscriptionService(
     subscriptionRepository,
-    emailService,
+    notificationClient,
     githubService,
+    env.APP_BASE_URL,
   );
   const subscriptionControllerMapper = new SubscriptionControllerMapper();
   const subscriptionController = new SubscriptionController(
@@ -61,9 +67,10 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   const githubRepositoryReleaseJob = new GithubReleaseNotificationJob(
     githubService,
     subscriptionService,
-    emailService,
+    notificationClient,
     githubRateLimiter,
     logger,
+    env.APP_BASE_URL,
   );
 
   const unconfirmedSubscriptionsCleanupJob = new UnconfirmedSubscriptionsCleanupJob(
@@ -82,11 +89,11 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   return {
     logger,
     prisma,
-    emailProvider,
+    notificationClient,
     githubRateLimiter,
     jobsManager,
     controllers: { subscriptionController, metricsController },
-    services: { subscriptionService, emailService, githubService },
+    services: { subscriptionService, githubService },
   };
 }
 

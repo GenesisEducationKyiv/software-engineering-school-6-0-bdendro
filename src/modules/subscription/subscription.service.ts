@@ -2,17 +2,19 @@ import { randomUUID } from 'node:crypto';
 import { SubscriptionRepositoryInterface } from './interfaces/subscription.repository.interface';
 import { SubscriptionServiceInterface } from './interfaces/subscription.service.interface';
 import { SubscribeBody } from './schemas/subscription.schema';
-import { NotFoundError } from '../../common/utils/errors/custom-errors';
+import { NotFoundError } from '../../../libs/common/utils/errors/custom-errors';
 import { SUBSCRIPTION_ERROR_MESSAGES } from './constants/error-messages';
 import { GithubServiceInterface, GITHUB_ERROR_MESSAGES } from '../github/index';
 import { Subscription } from './types/subscription';
-import { SubscriptionEmailServiceInterface } from '../notification/index';
+import { buildConfirmationUrl, buildUnsubscribeUrl } from './utils/build-url';
+import { SubscriptionNotificationSenderInterface } from '../../infrastructure/notification/interfaces/subscription-email.service.interface';
 
 export class SubscriptionService implements SubscriptionServiceInterface {
   constructor(
     private readonly subscriptionRepository: SubscriptionRepositoryInterface,
-    private readonly emailService: SubscriptionEmailServiceInterface,
+    private readonly notificationSender: SubscriptionNotificationSenderInterface,
     private readonly githubService: GithubServiceInterface,
+    private readonly subscriptionBaseUrl: string,
   ) {}
 
   async getConfirmedSubscriptions(): Promise<Subscription[]> {
@@ -42,7 +44,12 @@ export class SubscriptionService implements SubscriptionServiceInterface {
       token,
     );
 
-    await this.emailService.sendConfirmationEmail(subscribeBody.email, token, subscribeBody.repo);
+    const confirmationUrl = buildConfirmationUrl(this.subscriptionBaseUrl, token);
+    await this.notificationSender.sendConfirmationNotification(
+      subscribeBody.email,
+      confirmationUrl,
+      subscribeBody.repo,
+    );
   }
 
   async confirm(token: string): Promise<void> {
@@ -55,9 +62,10 @@ export class SubscriptionService implements SubscriptionServiceInterface {
       confirmed: true,
     });
 
-    await this.emailService.sendConfirmationSuccessEmail(
+    const unsubscribeUrl = buildUnsubscribeUrl(this.subscriptionBaseUrl, token);
+    await this.notificationSender.sendConfirmationSuccessNotification(
       subscription.email,
-      token,
+      unsubscribeUrl,
       subscription.repo,
     );
 
@@ -68,7 +76,10 @@ export class SubscriptionService implements SubscriptionServiceInterface {
     const subscription = await this.subscriptionRepository.deleteByToken(token);
     if (!subscription) throw new NotFoundError(SUBSCRIPTION_ERROR_MESSAGES.NOT_FOUND);
 
-    await this.emailService.sendUnsubscribeSuccessEmail(subscription.email, subscription.repo);
+    await this.notificationSender.sendUnsubscribeSuccessNotification(
+      subscription.email,
+      subscription.repo,
+    );
 
     return;
   }

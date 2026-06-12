@@ -1,11 +1,12 @@
+import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import nock from 'nock';
 import { createApp } from '../../../src/app';
 import { createContainer } from '../../../src/container';
 import { env } from '../../../src/config/env';
 import type { PrismaDBClient } from '../../../src/infrastructure/database/prisma';
-import type { AppLogger } from '../../../src/infrastructure/logger/interfaces/logger.interface';
-import { EMAIL } from '../../../src/modules/notification/constants/email.const';
+import type { AppLogger } from '../../../libs/infrastructure/logger/interfaces/logger.interface';
+import { EMAIL } from '../../../apps/notification/src/notification/constants/email.const';
 import type { SubscribeBody } from '../../../src/modules/subscription/schemas/subscription.schema';
 import type { SubscriptionCreateInput } from '../../../src/generated/prisma/models';
 import type {
@@ -14,7 +15,6 @@ import type {
 } from '../../../src/modules/github/dto/github-api.response.dto';
 import type { Application } from 'express';
 import { GithubRateLimiterInterface } from '../../../src/modules/github/utils/github-rate-limiter';
-import { randomUUID } from 'node:crypto';
 
 const transporterMock = {
   verify: jest.fn().mockResolvedValue(true),

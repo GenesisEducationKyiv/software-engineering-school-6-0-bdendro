@@ -21,7 +21,7 @@ FROM deps AS migration
 
 COPY . .
 
-CMD ["npx", "prisma", "migrate", "deploy"]
+CMD ["npm", "run", "migrate:prod"]
 
 # --- Build stage ---
 FROM deps AS build
@@ -41,7 +41,7 @@ COPY --from=build /app/dist ./dist
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "node dist/main.js"]
+CMD ["sh", "-c", "npm run start:prod"]
 
 # --- Unit test stage ---
 FROM deps AS test-unit

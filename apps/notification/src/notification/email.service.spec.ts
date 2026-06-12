@@ -1,4 +1,4 @@
-import { GithubRelease } from '../github';
+import { RepositoryRelease } from '../../../../libs/contracts/notification/notification.contract';
 import { EMAIL } from './constants/email.const';
 import { EmailService } from './email.service';
 import { EmailProviderInterface } from './interfaces/email.provider.interface';
@@ -27,13 +27,12 @@ describe('EmailService', () => {
   let emailService: EmailService;
   let emailProvider: jest.Mocked<EmailProviderInterface>;
 
-  const appBaseUrl = 'http://localhost:3000/api';
-
   const to = 'test@example.com';
-  const token = 'test-token';
+  const confirmationUrl = 'http://localhost:3000/confirm';
+  const unsubscribeUrl = 'http://localhost:3000/unsubscribe';
   const repo = 'owner/repo';
 
-  const release: GithubRelease = {
+  const release: RepositoryRelease = {
     id: 1,
     repoName: repo,
     tagName: 'v1.2.3',
@@ -52,7 +51,7 @@ describe('EmailService', () => {
       send: jest.fn(),
     } as any;
 
-    emailService = new EmailService(emailProvider, appBaseUrl);
+    emailService = new EmailService(emailProvider);
   });
 
   beforeEach(() => {
@@ -60,14 +59,12 @@ describe('EmailService', () => {
   });
 
   describe('sendConfirmationEmail', () => {
-    const confirmationUrl = `${appBaseUrl}/${EMAIL.CONFIRMATION_PATH}/${token}`;
-
     it('should build confirmation url, render confirmation template and send email', async () => {
       (
         getConfirmEmailTemplate as jest.MockedFunction<typeof getConfirmEmailTemplate>
       ).mockReturnValue(confirmTemplateHtml);
 
-      await emailService.sendConfirmationEmail(to, token, repo);
+      await emailService.sendConfirmationEmail(to, confirmationUrl, repo);
 
       expect(getConfirmEmailTemplate).toHaveBeenCalledWith(confirmationUrl, repo);
       expect(emailProvider.send).toHaveBeenCalledWith({
@@ -79,14 +76,12 @@ describe('EmailService', () => {
   });
 
   describe('sendConfirmationSuccessEmail', () => {
-    const unsubscribeUrl = `${appBaseUrl}/${EMAIL.UNSUBSCRIBE_PATH}/${token}`;
-
     it('should build unsubscribe url, render confirmation success template and send email', async () => {
       (
         getConfirmationSuccessTemplate as jest.MockedFunction<typeof getConfirmationSuccessTemplate>
       ).mockReturnValue(confirmationSuccessTemplateHtml);
 
-      await emailService.sendConfirmationSuccessEmail(to, token, repo);
+      await emailService.sendConfirmationSuccessEmail(to, unsubscribeUrl, repo);
 
       expect(getConfirmationSuccessTemplate).toHaveBeenCalledWith(unsubscribeUrl, repo);
       expect(emailProvider.send).toHaveBeenCalledWith({
@@ -115,14 +110,12 @@ describe('EmailService', () => {
   });
 
   describe('sendGitHubReleaseEmail', () => {
-    const unsubscribeUrl = `${appBaseUrl}/${EMAIL.UNSUBSCRIBE_PATH}/${token}`;
-
     it('should build unsubscribe url, render repo update template and send email', async () => {
       (getRepoUpdateTemplate as jest.MockedFunction<typeof getRepoUpdateTemplate>).mockReturnValue(
         repoUpdateTemplateHtml,
       );
 
-      await emailService.sendGitHubReleaseEmail(to, release, token);
+      await emailService.sendGitHubReleaseEmail(to, release, unsubscribeUrl);
 
       expect(getRepoUpdateTemplate).toHaveBeenCalledWith(release, unsubscribeUrl);
       expect(emailProvider.send).toHaveBeenCalledWith({

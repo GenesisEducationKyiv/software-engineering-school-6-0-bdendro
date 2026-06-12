@@ -1,5 +1,5 @@
-import { ENV } from '../common/constants/env';
-import { LoggerConfig } from '../infrastructure/logger/interfaces/logger.interface';
+import { ENV } from '../../libs/common/constants/env';
+import { LoggerConfig } from '../../libs/infrastructure/logger/interfaces/logger.interface';
 import { Env } from './env';
 
 const LOG_LEVELS_BY_ENV = {

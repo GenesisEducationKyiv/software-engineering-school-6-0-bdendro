@@ -4,10 +4,10 @@ import {
   RequestWithValidatedBody,
   RequestWithValidatedParams,
   RequestWithValidatedQuery,
-} from '../../common/types/validated-request';
+} from '../../../libs/common/types/validated-request';
 import { SubscribeBody, SubscriptionsQuery, TokenParams } from './schemas/subscription.schema';
 import { SubscriptionServiceInterface } from './interfaces/subscription.service.interface';
-import { ResponseMessage } from '../../common/types/response';
+import { MessageResponse } from '../../../libs/common/types/response';
 import { SubscriptionResponse } from './dto/subscription.response.dto';
 import { SubscriptionControllerMapperInterface } from './interfaces/subscription.mapper.interface';
 
@@ -19,7 +19,7 @@ export class SubscriptionController implements SubscriptionControllerInterface {
 
   async subscribe(
     req: RequestWithValidatedBody<SubscribeBody>,
-    res: Response<ResponseMessage>,
+    res: Response<MessageResponse>,
   ): Promise<void> {
     await this.subscriptionService.subscribe(req.validated.body);
     res.status(200).json({ message: 'Subscription successful. Confirmation email sent.' });
@@ -27,7 +27,7 @@ export class SubscriptionController implements SubscriptionControllerInterface {
 
   async confirm(
     req: RequestWithValidatedParams<TokenParams>,
-    res: Response<ResponseMessage>,
+    res: Response<MessageResponse>,
   ): Promise<void> {
     await this.subscriptionService.confirm(req.validated.params.token);
     res.status(200).json({ message: 'Subscription confirmed successfully' });
@@ -35,7 +35,7 @@ export class SubscriptionController implements SubscriptionControllerInterface {
 
   async unsubscribe(
     req: RequestWithValidatedParams<TokenParams>,
-    res: Response<ResponseMessage>,
+    res: Response<MessageResponse>,
   ): Promise<void> {
     await this.subscriptionService.unsubscribe(req.validated.params.token);
     res.status(200).json({ message: 'Unsubscribed successfully' });

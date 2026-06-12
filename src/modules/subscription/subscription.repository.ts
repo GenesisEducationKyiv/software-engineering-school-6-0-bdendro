@@ -1,4 +1,4 @@
-import { ConflictError } from '../../common/utils/errors/custom-errors';
+import { ConflictError } from '../../../libs/common/utils/errors/custom-errors';
 import { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { Subscription } from './types/subscription';
 import { SUBSCRIPTION_ERROR_MESSAGES } from './constants/error-messages';

@@ -11,7 +11,7 @@ import {
   EMAIL_VERIFICATION_ERROR_KIND,
 } from './constants/email-provider';
 import { isNodemailerErrorLike } from './utils/error';
-import { EmailServiceError } from '../../common/utils/errors/custom-errors';
+import { EmailServiceError } from '../../../../libs/common/utils/errors/custom-errors';
 
 interface EmailProviderOptions {
   EMAIL: string;

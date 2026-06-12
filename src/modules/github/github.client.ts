@@ -3,7 +3,7 @@ import axios from 'axios';
 import { GithubClientInterface } from './interfaces/github.client.interface';
 import { Env } from '../../config/env';
 import { GITHUB_API_ENDPOINT, GITHUB_API_VERSION } from './constants/github.const';
-import { GithubError } from '../../common/utils/errors/custom-errors';
+import { GithubError } from '../../../libs/common/utils/errors/custom-errors';
 import { GithubRateLimiterInterface, GitHubRateLimitHeaders } from './utils/github-rate-limiter';
 import { GithubRepository } from './types/github-repository';
 import {

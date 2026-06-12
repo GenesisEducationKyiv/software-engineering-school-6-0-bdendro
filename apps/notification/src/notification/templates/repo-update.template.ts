@@ -1,6 +1,6 @@
-import { GithubRelease } from '../../github/types/github-release';
+import { RepositoryRelease } from '../../../../../libs/contracts/notification/notification.contract';
 
-export function getRepoUpdateTemplate(release: GithubRelease, unsubscribeUrl: string) {
+export function getRepoUpdateTemplate(release: RepositoryRelease, unsubscribeUrl: string) {
   return `
     <html>
       <body>

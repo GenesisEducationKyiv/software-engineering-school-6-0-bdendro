@@ -1,4 +1,4 @@
-import { AppLogger } from '../../../infrastructure/logger/interfaces/logger.interface';
+import { AppLogger } from '../../../../libs/infrastructure/logger/interfaces/logger.interface';
 import { SubscriptionServiceInterface } from '../interfaces/subscription.service.interface';
 import { JobInterface } from '../../../jobs/interfaces/job.interface';
 

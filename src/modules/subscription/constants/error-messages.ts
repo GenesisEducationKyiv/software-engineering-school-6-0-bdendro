@@ -1,4 +1,4 @@
-import { ERROR_MESSAGES } from '../../../common/utils/errors/get-error-message';
+import { ERROR_MESSAGES } from '../../../../libs/common/utils/errors/get-error-message';
 import { SUBSCRIPTION_NAME } from './subscriptions.const';
 
 export const SUBSCRIPTION_ERROR_MESSAGES = {
