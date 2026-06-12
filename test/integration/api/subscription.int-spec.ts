@@ -6,7 +6,6 @@ import { createContainer } from '../../../src/container';
 import { env } from '../../../src/config/env';
 import type { PrismaDBClient } from '../../../src/infrastructure/database/prisma';
 import type { AppLogger } from '../../../libs/infrastructure/logger/interfaces/logger.interface';
-import { EMAIL } from '../../../apps/notification/src/notification/constants/email.const';
 import type { SubscribeBody } from '../../../src/modules/subscription/schemas/subscription.schema';
 import type { SubscriptionCreateInput } from '../../../src/generated/prisma/models';
 import type {
@@ -16,15 +15,14 @@ import type {
 import type { Application } from 'express';
 import { GithubRateLimiterInterface } from '../../../src/modules/github/utils/github-rate-limiter';
 
-const transporterMock = {
-  verify: jest.fn().mockResolvedValue(true),
-  sendMail: jest.fn().mockResolvedValue({ messageId: 'test-message-id' }),
-  close: jest.fn(),
-};
+const notificationServiceBaseUrl = env.NOTIFICATION_SERVICE_URL;
 
-jest.mock('nodemailer', () => ({
-  createTransport: () => transporterMock,
-}));
+const NOTIFICATION_ENDPOINTS = {
+  CONFIRMATION: `/subscription-confirmation`,
+  CONFIRMATION_SUCCESS: `/subscription-confirmation-success`,
+  UNSUBSCRIBE_SUCCESS: `/subscription-unsubscribe-success`,
+  REPOSITORY_RELEASE: `/repository-release`,
+};
 
 type GithubRepositoryApiResponse = Pick<
   GithubRepositoryApiFullResponse,
@@ -187,6 +185,18 @@ describe('Subscriptions API', () => {
         .get(`/repos/${repo}/releases/latest`)
         .reply(200, createGithubReleaseResponse({ tag_name: tagName }));
 
+      const notificationScope = nock(notificationServiceBaseUrl)
+        .post(NOTIFICATION_ENDPOINTS.CONFIRMATION, (body) => {
+          expect(body).toStrictEqual({
+            to: subscribeBody.email,
+            repo: subscribeBody.repo,
+            confirmationUrl: expect.stringContaining('/confirm/'),
+          });
+
+          return true;
+        })
+        .reply(200, { message: 'Success' });
+
       const res = await request(app).post(SUBSCRIBE_URL).send(subscribeBody).expect(200);
 
       expect(res.body).toStrictEqual({ message: expect.any(String) });
@@ -204,14 +214,7 @@ describe('Subscriptions API', () => {
 
       expect(subscription?.token).toHaveLength(36);
 
-      expect(transporterMock.sendMail).toHaveBeenCalledTimes(1);
-      expect(transporterMock.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: subscribeBody.email,
-          subject: EMAIL.SUBJECT_CONFIRMATION,
-          html: expect.stringContaining(subscription!.token),
-        }),
-      );
+      expect(notificationScope.isDone()).toBe(true);
     });
 
     it('should return 400 if repo format is invalid', async () => {
@@ -232,7 +235,6 @@ describe('Subscriptions API', () => {
       });
 
       expect(await db.findByEmailAndRepo(subscribeBody.email, subscribeBody.repo)).toBeNull();
-      expect(transporterMock.sendMail).not.toHaveBeenCalled();
     });
 
     it('should return 400 if request body is empty', async () => {
@@ -251,8 +253,6 @@ describe('Subscriptions API', () => {
           }),
         ]),
       });
-
-      expect(transporterMock.sendMail).not.toHaveBeenCalled();
     });
 
     it('should return 404 if GitHub repository does not exist', async () => {
@@ -270,7 +270,6 @@ describe('Subscriptions API', () => {
       });
 
       expect(await db.findByEmailAndRepo(subscribeBody.email, repo)).toBeNull();
-      expect(transporterMock.sendMail).not.toHaveBeenCalled();
     });
 
     it('should return 503 if GitHub API is unavailable while checking repository', async () => {
@@ -288,7 +287,6 @@ describe('Subscriptions API', () => {
       });
 
       expect(await db.findByEmailAndRepo(subscribeBody.email, repo)).toBeNull();
-      expect(transporterMock.sendMail).not.toHaveBeenCalled();
     });
 
     it('should return 503 if GitHub rate limit is reached', async () => {
@@ -316,7 +314,6 @@ describe('Subscriptions API', () => {
 
       expect(githubRateLimiter.isBlocked()).toBe(true);
       expect(await db.findByEmailAndRepo(subscribeBody.email, repo)).toBeNull();
-      expect(transporterMock.sendMail).not.toHaveBeenCalled();
     });
 
     it('should return 409 for duplicate subscription without sending email', async () => {
@@ -347,7 +344,6 @@ describe('Subscriptions API', () => {
       });
 
       expect(await db.countByEmailAndRepo(subscribeBody.email, repo)).toBe(1);
-      expect(transporterMock.sendMail).not.toHaveBeenCalled();
     });
   });
 
@@ -361,6 +357,18 @@ describe('Subscriptions API', () => {
       });
       const subscription = await db.create(subscriptionInput);
 
+      const notificationScope = nock(notificationServiceBaseUrl)
+        .post(NOTIFICATION_ENDPOINTS.CONFIRMATION_SUCCESS, (body) => {
+          expect(body).toStrictEqual({
+            to: subscription.email,
+            repo: subscription.repo,
+            unsubscribeUrl: expect.stringContaining('/unsubscribe/'),
+          });
+
+          return true;
+        })
+        .reply(200, { message: 'Success' });
+
       const res = await request(app).get(CONFIRM_URL(subscription.token)).expect(200);
 
       expect(res.body).toStrictEqual({ message: expect.any(String) });
@@ -372,14 +380,7 @@ describe('Subscriptions API', () => {
         confirmed: true,
       });
 
-      expect(transporterMock.sendMail).toHaveBeenCalledTimes(1);
-      expect(transporterMock.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: subscription.email,
-          subject: EMAIL.SUBJECT_CONFIRMED,
-          html: expect.stringContaining(subscription.token),
-        }),
-      );
+      expect(notificationScope.isDone()).toBe(true);
     });
 
     it('should return 400 if token is invalid', async () => {
@@ -396,8 +397,6 @@ describe('Subscriptions API', () => {
           }),
         ]),
       });
-
-      expect(transporterMock.sendMail).not.toHaveBeenCalled();
     });
 
     it('should return 404 if subscription does not exist', async () => {
@@ -406,8 +405,6 @@ describe('Subscriptions API', () => {
       const res = await request(app).get(CONFIRM_URL(token)).expect(404);
 
       expect(res.body).toStrictEqual({ message: expect.any(String) });
-
-      expect(transporterMock.sendMail).not.toHaveBeenCalled();
     });
 
     it('should return 200 without sending email or updating db if subscription is already confirmed', async () => {
@@ -425,8 +422,6 @@ describe('Subscriptions API', () => {
 
       const subscriptionAfterRequest = await db.findByToken(subscription.token);
       expect(subscriptionAfterRequest).toStrictEqual(subscription);
-
-      expect(transporterMock.sendMail).not.toHaveBeenCalled();
     });
   });
 
@@ -440,6 +435,17 @@ describe('Subscriptions API', () => {
       });
       const subscription = await db.create(subscriptionInput);
 
+      const notificationScope = nock(notificationServiceBaseUrl)
+        .post(NOTIFICATION_ENDPOINTS.UNSUBSCRIBE_SUCCESS, (body) => {
+          expect(body).toStrictEqual({
+            to: subscription.email,
+            repo: subscription.repo,
+          });
+
+          return true;
+        })
+        .reply(200, { message: 'Success' });
+
       const res = await request(app).get(UNSUBSCRIBE_URL(subscription.token)).expect(200);
 
       expect(res.body).toEqual({ message: expect.any(String) });
@@ -448,14 +454,7 @@ describe('Subscriptions API', () => {
 
       expect(deletedSubscription).toBeNull();
 
-      expect(transporterMock.sendMail).toHaveBeenCalledTimes(1);
-      expect(transporterMock.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: subscription.email,
-          subject: EMAIL.SUBJECT_CANCELED,
-          html: expect.stringContaining(subscription.repo),
-        }),
-      );
+      expect(notificationScope.isDone()).toBe(true);
     });
 
     it('should return 400 if token is invalid', async () => {
@@ -472,8 +471,6 @@ describe('Subscriptions API', () => {
           }),
         ]),
       });
-
-      expect(transporterMock.sendMail).not.toHaveBeenCalled();
     });
 
     it('should return 404 if subscription does not exist', async () => {
@@ -483,8 +480,6 @@ describe('Subscriptions API', () => {
       expect(res.body).toStrictEqual({
         message: expect.any(String),
       });
-
-      expect(transporterMock.sendMail).not.toHaveBeenCalled();
     });
   });
 
