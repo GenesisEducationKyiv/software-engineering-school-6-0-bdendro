@@ -30,4 +30,4 @@ COPY --from=build /app/dist ./dist
 
 EXPOSE 3002
 
-CMD ["npm", "run", "start:notification:prod"]
+CMD ["npm", "run", "start:prod:notification"]
