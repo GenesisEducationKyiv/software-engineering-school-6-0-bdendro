@@ -26,7 +26,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'npm run start:notification:dev',
+      command: 'npm run start:notification',
       url: 'http://localhost:3002',
       timeout: 120_000,
       reuseExistingServer: !process.env.CI,
