@@ -29,6 +29,25 @@ services:
     networks:
       - backend-net
 
+  notification:
+    build:
+      context: .
+      dockerfile: apps/notification/Dockerfile
+      target: production
+    ports:
+      - '${NOTIFICATION_PORT:-3002}:3002'
+    env_file:
+      - path: .env
+    environment:
+      NODE_ENV: production
+      NOTIFICATION_PORT: 3002
+    logging:
+      options:
+        max-size: '10m'
+        max-file: '5'
+    networks:
+      - backend-net
+
   app:
     build:
       context: .
@@ -38,10 +57,13 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      notification:
+        condition: service_started
     env_file:
       - path: .env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/github_subscription_api?schema=public
+      NOTIFICATION_SERVICE_URL: http://notification:3002
       NODE_ENV: production
     logging:
       options:

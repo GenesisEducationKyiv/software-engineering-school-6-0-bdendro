@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { createMetricsRouter } from '../libs/infrastructure/metrics/metrics.router';
 import { httpMetrics } from '../libs/common/middlewares/http-metrics';
 
-const swaggerDocumentPath = join(__dirname, '..', 'docs', 'swagger.json');
+const swaggerDocumentPath = join(process.cwd(), 'docs', 'swagger.json');
 const swaggerDocument = JSON.parse(readFileSync(swaggerDocumentPath, 'utf8')) as Record<
   string,
   unknown
@@ -23,7 +23,7 @@ export function createApp(container: AppContainer): Application {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  app.use(express.static(path.join(__dirname, '..', 'public')));
+  app.use(express.static(path.join(process.cwd(), 'public')));
 
   app.use('/metrics', createMetricsRouter(container.controllers.metricsController));
 

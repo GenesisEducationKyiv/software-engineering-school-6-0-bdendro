@@ -24,12 +24,20 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-
-  webServer: {
-    command: 'npm run start',
-    url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    env: { NODE_ENV: 'test' },
-  },
+  webServer: [
+    {
+      command: 'npm run start:notification:dev',
+      url: 'http://localhost:3002',
+      timeout: 120_000,
+      reuseExistingServer: !process.env.CI,
+      env: { NODE_ENV: 'test' },
+    },
+    {
+      command: 'npm run start',
+      url: BASE_URL,
+      timeout: 120_000,
+      reuseExistingServer: !process.env.CI,
+      env: { NODE_ENV: 'test' },
+    },
+  ],
 });
