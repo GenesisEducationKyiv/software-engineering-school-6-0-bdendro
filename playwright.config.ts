@@ -27,7 +27,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'npm run start:notification',
-      url: 'http://localhost:3002',
+      url: 'http://localhost:3002/health',
       timeout: 120_000,
       reuseExistingServer: !process.env.CI,
       env: { NODE_ENV: 'test' },
