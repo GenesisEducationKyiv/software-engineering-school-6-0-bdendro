@@ -1,7 +1,7 @@
-import { RepositoryRelease } from '../../../libs/contracts/notification/notification.contract';
-import { GithubRelease } from '../../modules/github';
+import { RepositoryRelease } from '../../../../libs/contracts/main/events/main.produce.contract';
+import { GithubRelease } from '../../github';
 
-export class NotificationClientMapper {
+export class SubscriptionProducerMapper {
   constructor() {}
 
   toRepositoryRelease(release: GithubRelease): RepositoryRelease {

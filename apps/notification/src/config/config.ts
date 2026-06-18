@@ -1,12 +1,15 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
 import { ENV, ENV_FILES } from '../../../../libs/common/constants/env';
+import { urlSchema } from '../../../../libs/common/utils/validation/common.schema';
 
 const ENV_FILE_PATH = process.env.NODE_ENV === ENV.TEST ? ENV_FILES.TEST : ENV_FILES.ENV;
 dotenv.config({ path: ENV_FILE_PATH, quiet: true });
 
 const envSchema = z.object({
   NODE_ENV: z.enum([ENV.DEVELOPMENT, ENV.TEST, ENV.PRODUCTION]).default(ENV.DEVELOPMENT),
+
+  RABBITMQ_URL: urlSchema,
 
   APP_NAME: z.string().trim().min(1),
 

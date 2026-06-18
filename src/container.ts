@@ -18,18 +18,19 @@ import { GithubClientMapper } from './modules/github/mappers/github-client.mappe
 import { SubscriptionPrismaMapper } from './modules/subscription/mappers/subscription-prisma.mapper';
 import { SubscriptionControllerMapper } from './modules/subscription/mappers/subscription-controller.mapper';
 import { MetricsController } from '../libs/infrastructure/metrics/metrics.controller';
-import { SubscriptionNotificationSenderInterface } from './infrastructure/notification/interfaces/subscription-email.service.interface';
-import { RepositoryReleaseNotificationSenderInterface } from './infrastructure/notification/interfaces/repository-release-email.sender.interface';
-import { NotificationClient } from './infrastructure/notification/notification.client';
-import { NotificationClientMapper } from './infrastructure/notification/notification.mapper';
-
-type NotificationSender = SubscriptionNotificationSenderInterface &
-  RepositoryReleaseNotificationSenderInterface;
+import {
+  createRabbitMqConnection,
+  RabbitMqConnection,
+} from '../libs/infrastructure/message-broker/rabbitmq.connection';
+import { RabbitMqProducer } from '../libs/infrastructure/message-broker/rabbitmq.producer';
+import { MAIN_EXCHANGE } from '../libs/contracts/main/events/exchanges';
+import { SubscriptionEventProducer } from './modules/subscription/subscription-event.producer';
+import { SubscriptionProducerMapper } from './modules/subscription/mappers/subscription-producer.mapper';
 
 export type ContainerOverrides = Partial<{
   logger: AppLogger;
   prisma: PrismaDBClient;
-  notificationClient: NotificationSender;
+  rabbitMqConnection: RabbitMqConnection;
   githubClient: GithubClientInterface;
 }>;
 
@@ -38,9 +39,15 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
 
   const prisma = overrides?.prisma || createPrismaClient(env.DATABASE_URL);
 
-  const notificationMapper = new NotificationClientMapper();
-  const notificationClient =
-    overrides?.notificationClient || new NotificationClient(env, notificationMapper);
+  const rabbitMqConnection =
+    overrides?.rabbitMqConnection || createRabbitMqConnection(env.RABBITMQ_URL, logger);
+
+  const subscriptionProducerMapper = new SubscriptionProducerMapper();
+  const subscriptionBaseMessageProducer = new RabbitMqProducer(rabbitMqConnection, MAIN_EXCHANGE);
+  const subscriptionEventProducer = new SubscriptionEventProducer(
+    subscriptionBaseMessageProducer,
+    subscriptionProducerMapper,
+  );
 
   const githubRateLimiter = new GithubRateLimiter();
   const githubClientMapper = new GithubClientMapper();
@@ -52,7 +59,7 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   const subscriptionRepository = new SubscriptionRepository(prisma, subscriptionRepositoryMapper);
   const subscriptionService = new SubscriptionService(
     subscriptionRepository,
-    notificationClient,
+    subscriptionEventProducer,
     githubService,
     env.APP_BASE_URL,
   );
@@ -67,7 +74,7 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   const githubRepositoryReleaseJob = new GithubReleaseNotificationJob(
     githubService,
     subscriptionService,
-    notificationClient,
+    subscriptionEventProducer,
     githubRateLimiter,
     logger,
     env.APP_BASE_URL,
@@ -89,7 +96,7 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   return {
     logger,
     prisma,
-    notificationClient,
+    rabbitMqConnection,
     githubRateLimiter,
     jobsManager,
     controllers: { subscriptionController, metricsController },

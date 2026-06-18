@@ -9,13 +9,13 @@ import { GithubRateLimiterInterface } from '../../github/utils/github-rate-limit
 import { SubscriptionServiceInterface } from '../interfaces/subscription.service.interface';
 import { JobInterface } from '../../../jobs/interfaces/job.interface';
 import { buildUnsubscribeUrl } from '../utils/build-url';
-import { RepositoryReleaseNotificationSenderInterface } from '../../../infrastructure/notification/interfaces/repository-release-email.sender.interface';
+import { RepositoryReleaseEventProducerInterface } from '../interfaces/subscription-event.producer';
 
 export class GithubReleaseNotificationJob implements JobInterface {
   constructor(
     private readonly githubService: GithubServiceInterface,
     private readonly subscriptionService: SubscriptionServiceInterface,
-    private readonly notificationSender: RepositoryReleaseNotificationSenderInterface,
+    private readonly eventProducer: RepositoryReleaseEventProducerInterface,
     private readonly githubRateLimiter: GithubRateLimiterInterface,
     private readonly logger: AppLogger,
     private readonly baseUrl: string,
@@ -50,7 +50,7 @@ export class GithubReleaseNotificationJob implements JobInterface {
         const release = await this.githubService.getLastRelease(sub.repo);
         if (release !== null && release.tagName !== sub.lastSeenTag) {
           const unsubscribeUrl = buildUnsubscribeUrl(this.baseUrl, sub.token);
-          await this.notificationSender.sendRepositoryReleaseNotification(
+          await this.eventProducer.produceSubscriptionRepositoryRelease(
             sub.email,
             release,
             unsubscribeUrl,
