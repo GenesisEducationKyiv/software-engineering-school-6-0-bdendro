@@ -77,7 +77,7 @@ services:
       APP_CLIENT_BASE_URL: ${APP_CLIENT_BASE_URL}
       APP_TIMEZONE: ${APP_TIMEZONE}
       DATABASE_URL: postgresql://postgres:postgres@db-test:5432/github_subscription_api_test?schema=public
-      RABBITMQ_URL: amqp://app:app@rabbitmq-test:5672
+      RABBITMQ_URL: amqp://app:app@rabbitmq:5672
       NOTIFICATION_SERVICE_URL: http://localhost:3002
       NOTIFICATION_PORT: 3002
       EMAIL: ${EMAIL}
@@ -111,7 +111,7 @@ services:
       APP_CLIENT_BASE_URL: ${APP_CLIENT_BASE_URL}
       APP_TIMEZONE: ${APP_TIMEZONE}
       DATABASE_URL: postgresql://postgres:postgres@db-test:5432/github_subscription_api_test?schema=public
-      RABBITMQ_URL: amqp://app:app@rabbitmq-test:5672
+      RABBITMQ_URL: amqp://app:app@rabbitmq:5672
       NOTIFICATION_SERVICE_URL: http://localhost:3002
       NOTIFICATION_PORT: 3002
       EMAIL: ${EMAIL}
