@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import nock from 'nock';
+import type { Application } from 'express';
 import { createApp } from '../../../src/app';
 import { createContainer } from '../../../src/container';
 import { env } from '../../../src/config/env';
@@ -12,17 +13,9 @@ import type {
   GithubLatestReleaseApiResponse as GithubLatestReleaseApiFullResponse,
   GithubRepositoryApiResponse as GithubRepositoryApiFullResponse,
 } from '../../../src/modules/github/dto/github-api.response.dto';
-import type { Application } from 'express';
 import { GithubRateLimiterInterface } from '../../../src/modules/github/utils/github-rate-limiter';
-
-const notificationServiceBaseUrl = env.NOTIFICATION_SERVICE_URL;
-
-const NOTIFICATION_ENDPOINTS = {
-  CONFIRMATION: `/subscription-confirmation`,
-  CONFIRMATION_SUCCESS: `/subscription-confirmation-success`,
-  UNSUBSCRIBE_SUCCESS: `/subscription-unsubscribe-success`,
-  REPOSITORY_RELEASE: `/repository-release`,
-};
+import { RabbitMqConnection } from '../../../libs/infrastructure/message-broker/rabbitmq.connection';
+import { SUBSCRIPTION_EVENT_ROUTING_KEYS } from '../../../libs/contracts/main/events/routing-keys';
 
 type GithubRepositoryApiResponse = Pick<
   GithubRepositoryApiFullResponse,
@@ -137,6 +130,8 @@ class SubscriptionTestDb {
 describe('Subscriptions API', () => {
   let prisma: PrismaDBClient;
   let db: SubscriptionTestDb;
+  let rabbitMqConnection: RabbitMqConnection;
+  let subscriptionEventProduceSpy: jest.SpyInstance;
   let app: Application;
   let githubRateLimiter: GithubRateLimiterInterface;
 
@@ -145,9 +140,16 @@ describe('Subscriptions API', () => {
     prisma = container.prisma;
     await prisma.$connect();
 
+    rabbitMqConnection = container.rabbitMqConnection;
+
     db = new SubscriptionTestDb(prisma);
     app = createApp(container);
     githubRateLimiter = container.githubRateLimiter;
+
+    subscriptionEventProduceSpy = jest.spyOn(
+      container.producers.subscription.subscriptionBaseMessageProducer,
+      'produce',
+    );
 
     nock.disableNetConnect();
     nock.enableNetConnect((host) => host.includes('localhost') || host.includes('127.0.0.1'));
@@ -159,11 +161,14 @@ describe('Subscriptions API', () => {
 
     await db.clear();
     await prisma.$disconnect();
+    await rabbitMqConnection.close();
   });
 
   beforeEach(async () => {
     await db.clear();
     githubRateLimiter.unblock(); // Test-only reset for the current in-memory rate limiter implementation.
+
+    subscriptionEventProduceSpy.mockClear();
 
     jest.clearAllMocks();
     nock.cleanAll();
@@ -185,18 +190,6 @@ describe('Subscriptions API', () => {
         .get(`/repos/${repo}/releases/latest`)
         .reply(200, createGithubReleaseResponse({ tag_name: tagName }));
 
-      const notificationScope = nock(notificationServiceBaseUrl)
-        .post(NOTIFICATION_ENDPOINTS.CONFIRMATION, (body) => {
-          expect(body).toStrictEqual({
-            to: subscribeBody.email,
-            repo: subscribeBody.repo,
-            confirmationUrl: expect.stringContaining('/confirm/'),
-          });
-
-          return true;
-        })
-        .reply(200, { message: 'Success' });
-
       const res = await request(app).post(SUBSCRIBE_URL).send(subscribeBody).expect(200);
 
       expect(res.body).toStrictEqual({ message: expect.any(String) });
@@ -214,7 +207,15 @@ describe('Subscriptions API', () => {
 
       expect(subscription?.token).toHaveLength(36);
 
-      expect(notificationScope.isDone()).toBe(true);
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledTimes(1);
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledWith(
+        SUBSCRIPTION_EVENT_ROUTING_KEYS.SUBSCRIBED,
+        expect.objectContaining({
+          email: subscribeBody.email,
+          confirmationUrl: expect.stringContaining(`/confirm/${subscription?.token}`),
+          repo: subscribeBody.repo,
+        }),
+      );
     });
 
     it('should return 400 if repo format is invalid', async () => {
@@ -235,6 +236,7 @@ describe('Subscriptions API', () => {
       });
 
       expect(await db.findByEmailAndRepo(subscribeBody.email, subscribeBody.repo)).toBeNull();
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledTimes(0);
     });
 
     it('should return 400 if request body is empty', async () => {
@@ -253,6 +255,7 @@ describe('Subscriptions API', () => {
           }),
         ]),
       });
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledTimes(0);
     });
 
     it('should return 404 if GitHub repository does not exist', async () => {
@@ -270,6 +273,7 @@ describe('Subscriptions API', () => {
       });
 
       expect(await db.findByEmailAndRepo(subscribeBody.email, repo)).toBeNull();
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledTimes(0);
     });
 
     it('should return 503 if GitHub API is unavailable while checking repository', async () => {
@@ -287,6 +291,7 @@ describe('Subscriptions API', () => {
       });
 
       expect(await db.findByEmailAndRepo(subscribeBody.email, repo)).toBeNull();
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledTimes(0);
     });
 
     it('should return 503 if GitHub rate limit is reached', async () => {
@@ -314,6 +319,7 @@ describe('Subscriptions API', () => {
 
       expect(githubRateLimiter.isBlocked()).toBe(true);
       expect(await db.findByEmailAndRepo(subscribeBody.email, repo)).toBeNull();
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledTimes(0);
     });
 
     it('should return 409 for duplicate subscription without sending email', async () => {
@@ -344,6 +350,7 @@ describe('Subscriptions API', () => {
       });
 
       expect(await db.countByEmailAndRepo(subscribeBody.email, repo)).toBe(1);
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledTimes(0);
     });
   });
 
@@ -357,18 +364,6 @@ describe('Subscriptions API', () => {
       });
       const subscription = await db.create(subscriptionInput);
 
-      const notificationScope = nock(notificationServiceBaseUrl)
-        .post(NOTIFICATION_ENDPOINTS.CONFIRMATION_SUCCESS, (body) => {
-          expect(body).toStrictEqual({
-            to: subscription.email,
-            repo: subscription.repo,
-            unsubscribeUrl: expect.stringContaining('/unsubscribe/'),
-          });
-
-          return true;
-        })
-        .reply(200, { message: 'Success' });
-
       const res = await request(app).get(CONFIRM_URL(subscription.token)).expect(200);
 
       expect(res.body).toStrictEqual({ message: expect.any(String) });
@@ -380,7 +375,15 @@ describe('Subscriptions API', () => {
         confirmed: true,
       });
 
-      expect(notificationScope.isDone()).toBe(true);
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledTimes(1);
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledWith(
+        SUBSCRIPTION_EVENT_ROUTING_KEYS.CONFIRMED,
+        expect.objectContaining({
+          email: subscription.email,
+          unsubscribeUrl: expect.stringContaining(`/unsubscribe/${subscription.token}`),
+          repo: subscription.repo,
+        }),
+      );
     });
 
     it('should return 400 if token is invalid', async () => {
@@ -397,6 +400,7 @@ describe('Subscriptions API', () => {
           }),
         ]),
       });
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledTimes(0);
     });
 
     it('should return 404 if subscription does not exist', async () => {
@@ -405,6 +409,7 @@ describe('Subscriptions API', () => {
       const res = await request(app).get(CONFIRM_URL(token)).expect(404);
 
       expect(res.body).toStrictEqual({ message: expect.any(String) });
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledTimes(0);
     });
 
     it('should return 200 without sending email or updating db if subscription is already confirmed', async () => {
@@ -422,6 +427,7 @@ describe('Subscriptions API', () => {
 
       const subscriptionAfterRequest = await db.findByToken(subscription.token);
       expect(subscriptionAfterRequest).toStrictEqual(subscription);
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledTimes(0);
     });
   });
 
@@ -435,17 +441,6 @@ describe('Subscriptions API', () => {
       });
       const subscription = await db.create(subscriptionInput);
 
-      const notificationScope = nock(notificationServiceBaseUrl)
-        .post(NOTIFICATION_ENDPOINTS.UNSUBSCRIBE_SUCCESS, (body) => {
-          expect(body).toStrictEqual({
-            to: subscription.email,
-            repo: subscription.repo,
-          });
-
-          return true;
-        })
-        .reply(200, { message: 'Success' });
-
       const res = await request(app).get(UNSUBSCRIBE_URL(subscription.token)).expect(200);
 
       expect(res.body).toEqual({ message: expect.any(String) });
@@ -454,7 +449,14 @@ describe('Subscriptions API', () => {
 
       expect(deletedSubscription).toBeNull();
 
-      expect(notificationScope.isDone()).toBe(true);
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledTimes(1);
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledWith(
+        SUBSCRIPTION_EVENT_ROUTING_KEYS.UNSUBSCRIBED,
+        expect.objectContaining({
+          email: subscription.email,
+          repo: subscription.repo,
+        }),
+      );
     });
 
     it('should return 400 if token is invalid', async () => {
@@ -471,6 +473,7 @@ describe('Subscriptions API', () => {
           }),
         ]),
       });
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledTimes(0);
     });
 
     it('should return 404 if subscription does not exist', async () => {
@@ -480,6 +483,7 @@ describe('Subscriptions API', () => {
       expect(res.body).toStrictEqual({
         message: expect.any(String),
       });
+      expect(subscriptionEventProduceSpy).toHaveBeenCalledTimes(0);
     });
   });
 

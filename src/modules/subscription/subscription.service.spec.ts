@@ -4,12 +4,12 @@ import { SubscriptionRepositoryInterface } from './interfaces/subscription.repos
 import { SubscriptionService } from './subscription.service';
 import { SubscribeBody } from './schemas/subscription.schema';
 import { Subscription } from './types/subscription';
-import { SubscriptionNotificationSenderInterface } from '../../infrastructure/notification/interfaces/subscription-email.service.interface';
+import { SubscriptionEventProducerInterface } from './interfaces/subscription-event.producer';
 
 describe('SubscriptionService', () => {
   let subscriptionService: SubscriptionService;
   let subscriptionRepository: jest.Mocked<SubscriptionRepositoryInterface>;
-  let notificationClient: jest.Mocked<SubscriptionNotificationSenderInterface>;
+  let subscriptionEventProducer: jest.Mocked<SubscriptionEventProducerInterface>;
   let githubService: jest.Mocked<GithubServiceInterface>;
 
   const email = 'test@example.com';
@@ -53,11 +53,11 @@ describe('SubscriptionService', () => {
       getSubscriptionByToken: jest.fn(),
     };
 
-    notificationClient = {
-      sendConfirmationNotification: jest.fn(),
-      sendConfirmationSuccessNotification: jest.fn(),
-      sendUnsubscribeSuccessNotification: jest.fn(),
-    } as jest.Mocked<SubscriptionNotificationSenderInterface>;
+    subscriptionEventProducer = {
+      produceSubscriptionConfirmed: jest.fn(),
+      produceSubscriptionCreated: jest.fn(),
+      produceSubscriptionUnsubscribed: jest.fn(),
+    } as jest.Mocked<SubscriptionEventProducerInterface>;
 
     githubService = {
       isRepositoryExists: jest.fn(),
@@ -66,7 +66,7 @@ describe('SubscriptionService', () => {
 
     subscriptionService = new SubscriptionService(
       subscriptionRepository,
-      notificationClient,
+      subscriptionEventProducer,
       githubService,
       baseSubscriptionUrl,
     );
@@ -161,15 +161,15 @@ describe('SubscriptionService', () => {
         expect.any(String),
       );
 
-      expect(notificationClient.sendConfirmationNotification).toHaveBeenCalledTimes(1);
-      expect(notificationClient.sendConfirmationNotification).toHaveBeenCalledWith(
+      expect(subscriptionEventProducer.produceSubscriptionCreated).toHaveBeenCalledTimes(1);
+      expect(subscriptionEventProducer.produceSubscriptionCreated).toHaveBeenCalledWith(
         email,
         expect.any(String),
         repo,
       );
 
       const createdToken = subscriptionRepository.create.mock.calls[0][1];
-      const emailedToken = notificationClient.sendConfirmationNotification.mock.calls[0][1];
+      const emailedToken = subscriptionEventProducer.produceSubscriptionCreated.mock.calls[0][1];
 
       expect(typeof createdToken).toBe('string');
       expect(createdToken.length).toBeGreaterThan(0);
@@ -184,7 +184,7 @@ describe('SubscriptionService', () => {
       expect(githubService.isRepositoryExists).toHaveBeenCalledWith(repo);
       expect(githubService.getLastRelease).not.toHaveBeenCalled();
       expect(subscriptionRepository.create).not.toHaveBeenCalled();
-      expect(notificationClient.sendConfirmationNotification).not.toHaveBeenCalled();
+      expect(subscriptionEventProducer.produceSubscriptionCreated).not.toHaveBeenCalled();
     });
 
     it('should create subscription with null lastSeenTag when release does not exist', async () => {
@@ -201,15 +201,15 @@ describe('SubscriptionService', () => {
         expect.any(String),
       );
 
-      expect(notificationClient.sendConfirmationNotification).toHaveBeenCalledTimes(1);
-      expect(notificationClient.sendConfirmationNotification).toHaveBeenCalledWith(
+      expect(subscriptionEventProducer.produceSubscriptionCreated).toHaveBeenCalledTimes(1);
+      expect(subscriptionEventProducer.produceSubscriptionCreated).toHaveBeenCalledWith(
         email,
         expect.any(String),
         repo,
       );
 
       const createdToken = subscriptionRepository.create.mock.calls[0][1];
-      const emailedToken = notificationClient.sendConfirmationNotification.mock.calls[0][1];
+      const emailedToken = subscriptionEventProducer.produceSubscriptionCreated.mock.calls[0][1];
 
       expect(typeof createdToken).toBe('string');
       expect(createdToken.length).toBeGreaterThan(0);
@@ -233,8 +233,8 @@ describe('SubscriptionService', () => {
       expect(subscriptionRepository.updateByToken).toHaveBeenCalledWith(token, {
         confirmed: true,
       });
-      expect(notificationClient.sendConfirmationSuccessNotification).toHaveBeenCalledTimes(1);
-      expect(notificationClient.sendConfirmationSuccessNotification).toHaveBeenCalledWith(
+      expect(subscriptionEventProducer.produceSubscriptionConfirmed).toHaveBeenCalledTimes(1);
+      expect(subscriptionEventProducer.produceSubscriptionConfirmed).toHaveBeenCalledWith(
         confirmedSubscription.email,
         expect.stringContaining(token),
         confirmedSubscription.repo,
@@ -253,7 +253,7 @@ describe('SubscriptionService', () => {
         expect.stringContaining(token),
       );
       expect(subscriptionRepository.updateByToken).not.toHaveBeenCalled();
-      expect(notificationClient.sendConfirmationSuccessNotification).not.toHaveBeenCalled();
+      expect(subscriptionEventProducer.produceSubscriptionConfirmed).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundError when subscription to confirm is not found', async () => {
@@ -261,7 +261,7 @@ describe('SubscriptionService', () => {
 
       await expect(subscriptionService.confirm(token)).rejects.toThrow(NotFoundError);
       expect(subscriptionRepository.updateByToken).not.toHaveBeenCalled();
-      expect(notificationClient.sendConfirmationSuccessNotification).not.toHaveBeenCalled();
+      expect(subscriptionEventProducer.produceSubscriptionConfirmed).not.toHaveBeenCalled();
     });
   });
 
@@ -274,8 +274,8 @@ describe('SubscriptionService', () => {
       await subscriptionService.unsubscribe(token);
 
       expect(subscriptionRepository.deleteByToken).toHaveBeenCalledWith(token);
-      expect(notificationClient.sendUnsubscribeSuccessNotification).toHaveBeenCalledTimes(1);
-      expect(notificationClient.sendUnsubscribeSuccessNotification).toHaveBeenCalledWith(
+      expect(subscriptionEventProducer.produceSubscriptionUnsubscribed).toHaveBeenCalledTimes(1);
+      expect(subscriptionEventProducer.produceSubscriptionUnsubscribed).toHaveBeenCalledWith(
         deletedSubscription.email,
         deletedSubscription.repo,
       );
@@ -285,7 +285,7 @@ describe('SubscriptionService', () => {
       subscriptionRepository.deleteByToken.mockResolvedValue(null);
 
       await expect(subscriptionService.unsubscribe(token)).rejects.toThrow(NotFoundError);
-      expect(notificationClient.sendConfirmationSuccessNotification).not.toHaveBeenCalled();
+      expect(subscriptionEventProducer.produceSubscriptionUnsubscribed).not.toHaveBeenCalled();
     });
   });
 

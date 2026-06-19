@@ -99,6 +99,9 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
     rabbitMqConnection,
     githubRateLimiter,
     jobsManager,
+    producers: {
+      subscription: { subscriptionBaseMessageProducer, subscriptionEventProducer },
+    },
     controllers: { subscriptionController, metricsController },
     services: { subscriptionService, githubService },
   };
