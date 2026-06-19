@@ -99,7 +99,7 @@ services:
 
 volumes:
   pgdata:
+  rabbitmqdata:
 
 networks:
   backend-net:
-  rabbitmqdata:
