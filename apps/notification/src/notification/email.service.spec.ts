@@ -1,4 +1,4 @@
-import { RepositoryRelease } from '../../../../libs/contracts/notification/notification.contract';
+import { RepositoryRelease } from '../../../../libs/contracts/notification/notification.schema';
 import { EMAIL } from './constants/email.const';
 import { EmailService } from './email.service';
 import { EmailProviderInterface } from './interfaces/email.provider.interface';
