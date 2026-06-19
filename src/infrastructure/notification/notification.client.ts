@@ -11,7 +11,7 @@ import {
   SendUnsubscribeSuccessBody,
   ServiceUnavailableResponse,
   ValidationErrorResponse,
-} from '../../../libs/contracts/notification/notification.schema';
+} from '../../../libs/contracts/notification/notification.contract';
 import { NOTIFICATION_ROUTE_PATHS } from '../../../libs/contracts/notification/notification.const';
 import { EmailServiceError } from '../../../libs/common/utils/errors/custom-errors';
 
