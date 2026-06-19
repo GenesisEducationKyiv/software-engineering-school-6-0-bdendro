@@ -10,7 +10,7 @@ import {
   MessageResponse,
   ServiceUnavailableResponse,
   ValidationErrorResponse,
-} from '../../../../../libs/contracts/notification/notification.schema';
+} from '../../../../../libs/contracts/notification/notification.contract';
 
 type ErrorResponse = MessageResponse | ValidationErrorResponse | ServiceUnavailableResponse;
 

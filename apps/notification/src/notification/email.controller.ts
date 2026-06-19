@@ -6,7 +6,7 @@ import {
   SendConfirmationSuccessBody,
   SendRepositoryReleaseBody,
   SendUnsubscribeSuccessBody,
-} from '../../../../libs/contracts/notification/notification.schema';
+} from '../../../../libs/contracts/notification/notification.contract';
 import { EmailServiceInterface } from './interfaces/email.service.interface';
 
 export class EmailController {

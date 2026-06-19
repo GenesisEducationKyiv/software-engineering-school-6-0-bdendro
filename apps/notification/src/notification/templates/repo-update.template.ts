@@ -1,4 +1,4 @@
-import { RepositoryRelease } from '../../../../../libs/contracts/notification/notification.schema';
+import { RepositoryRelease } from '../../../../../libs/contracts/notification/notification.contract';
 
 export function getRepoUpdateTemplate(release: RepositoryRelease, unsubscribeUrl: string) {
   return `

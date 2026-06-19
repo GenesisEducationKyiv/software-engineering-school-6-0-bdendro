@@ -1,4 +1,4 @@
-import { RepositoryRelease } from '../../../../../libs/contracts/notification/notification.schema';
+import { RepositoryRelease } from '../../../../../libs/contracts/notification/notification.contract';
 
 export interface EmailServiceInterface {
   sendConfirmationEmail(to: string, confirmationUrl: string, repo: string): Promise<void>;

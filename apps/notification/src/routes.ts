@@ -8,7 +8,7 @@ import {
   sendConfirmationSuccessBodySchema,
   sendRepositoryReleaseBodySchema,
   sendUnsubscribeSuccessBodySchema,
-} from '../../../libs/contracts/notification/notification.schema';
+} from '../../../libs/contracts/notification/notification.contract';
 
 type ControllerMethod<ReqBody> = (
   req: RequestWithValidatedBody<ReqBody>,

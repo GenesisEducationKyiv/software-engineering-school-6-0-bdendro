@@ -54,6 +54,9 @@ services:
       target: production
     ports:
       - '${NOTIFICATION_PORT:-3002}:3002'
+    depends_on:
+      rabbitmq:
+        condition: service_started
     env_file:
       - path: .env
     environment:
@@ -76,6 +79,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      rabbitmq:
+        condition: service_started
       notification:
         condition: service_started
     env_file:
