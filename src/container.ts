@@ -8,8 +8,8 @@ import { GithubClient } from './modules/github/github.client';
 import { GithubService } from './modules/github/github.service';
 import { GithubClientInterface } from './modules/github/interfaces/github.client.interface';
 import { GithubRateLimiter } from './modules/github/utils/github-rate-limiter';
-import { GithubReleaseNotificationJob } from './modules/subscription/jobs/github-repo-release.job';
-import { JobsManager } from './jobs/manager';
+import { GithubReleaseNotificationJob } from './modules/tracker/jobs/github-repo-release.job';
+import { JobsManager } from './jobs-manager';
 import { UnconfirmedSubscriptionsCleanupJob } from './modules/subscription/jobs/unconfirmed-subscriptions.job';
 import { SubscriptionController } from './modules/subscription/subscription.controller';
 import { SubscriptionRepository } from './modules/subscription/subscription.repository';
@@ -26,6 +26,7 @@ import { RabbitMqProducer } from '../libs/infrastructure/message-broker/rabbitmq
 import { MAIN_EXCHANGE } from '../libs/contracts/main/events/exchanges';
 import { SubscriptionEventProducer } from './modules/subscription/subscription-event.producer';
 import { SubscriptionProducerMapper } from './modules/subscription/mappers/subscription-producer.mapper';
+import { TrackerService } from './modules/tracker/tracker.service';
 
 export type ContainerOverrides = Partial<{
   logger: AppLogger;
@@ -42,18 +43,20 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   const rabbitMqConnection =
     overrides?.rabbitMqConnection || createRabbitMqConnection(env.RABBITMQ_URL, logger);
 
+  // GitHub
+  const githubRateLimiter = new GithubRateLimiter();
+  const githubClientMapper = new GithubClientMapper();
+  const githubClient =
+    overrides?.githubClient || new GithubClient(githubRateLimiter, githubClientMapper, env);
+  const githubService = new GithubService(githubClient);
+
+  // Subscription
   const subscriptionProducerMapper = new SubscriptionProducerMapper();
   const subscriptionBaseMessageProducer = new RabbitMqProducer(rabbitMqConnection, MAIN_EXCHANGE);
   const subscriptionEventProducer = new SubscriptionEventProducer(
     subscriptionBaseMessageProducer,
     subscriptionProducerMapper,
   );
-
-  const githubRateLimiter = new GithubRateLimiter();
-  const githubClientMapper = new GithubClientMapper();
-  const githubClient =
-    overrides?.githubClient || new GithubClient(githubRateLimiter, githubClientMapper, env);
-  const githubService = new GithubService(githubClient);
 
   const subscriptionRepositoryMapper = new SubscriptionPrismaMapper();
   const subscriptionRepository = new SubscriptionRepository(prisma, subscriptionRepositoryMapper);
@@ -69,16 +72,17 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
     subscriptionControllerMapper,
   );
 
-  const metricsController = new MetricsController();
-
-  const githubRepositoryReleaseJob = new GithubReleaseNotificationJob(
-    githubService,
+  // Tracker
+  const trackerService = new TrackerService(
     subscriptionService,
+    githubService,
     subscriptionEventProducer,
-    githubRateLimiter,
     logger,
     env.APP_BASE_URL,
   );
+
+  // Jobs
+  const githubRepositoryReleaseJob = new GithubReleaseNotificationJob(trackerService, logger);
 
   const unconfirmedSubscriptionsCleanupJob = new UnconfirmedSubscriptionsCleanupJob(
     logger,
@@ -92,6 +96,9 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
     logger,
     env,
   );
+
+  // Metrics
+  const metricsController = new MetricsController();
 
   return {
     logger,

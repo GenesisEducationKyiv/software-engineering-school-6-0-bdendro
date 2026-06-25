@@ -1,8 +1,8 @@
 import cron, { ScheduledTask } from 'node-cron';
-import { SCHEDULE } from './constants/schedule.const';
-import type { Env } from '../config/env';
-import { AppLogger } from '../../libs/infrastructure/logger/interfaces/logger.interface';
-import { JobInterface } from './interfaces/job.interface';
+import { SCHEDULE } from '../libs/common/jobs/constants/schedule.const';
+import type { Env } from './config/env';
+import { AppLogger } from '../libs/infrastructure/logger/interfaces/logger.interface';
+import { JobInterface } from '../libs/common/jobs/interfaces/job.interface';
 
 export class JobsManager {
   private githubReleaseNotificationTask?: ScheduledTask;
