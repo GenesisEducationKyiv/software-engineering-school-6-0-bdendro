@@ -1,18 +1,17 @@
 import { SubscriptionResponse } from '../dto/subscription.response.dto';
-import { SubscriptionControllerMapperInterface } from '../interfaces/subscription.mapper.interface';
-import { Subscription } from '../types/subscription';
+import { SubscriptionWithRepository } from '../types/subscription';
 
-export class SubscriptionControllerMapper implements SubscriptionControllerMapperInterface {
-  toSubscriptionResponse(subscription: Subscription): SubscriptionResponse {
+export class SubscriptionControllerMapper {
+  toSubscriptionResponse(subscription: SubscriptionWithRepository): SubscriptionResponse {
     return {
       email: subscription.email,
-      repo: subscription.repo,
+      repo: subscription.repository.repo,
       confirmed: subscription.confirmed,
-      last_seen_tag: subscription.lastSeenTag,
+      last_seen_tag: subscription.repository.lastSeenTag,
     };
   }
 
-  toSubscriptionsResponse(subscriptions: Subscription[]): SubscriptionResponse[] {
+  toSubscriptionsResponse(subscriptions: SubscriptionWithRepository[]): SubscriptionResponse[] {
     return subscriptions.map((sub) => this.toSubscriptionResponse(sub));
   }
 }

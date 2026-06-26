@@ -108,7 +108,7 @@ Then **manually update** the required values in `.env`.
 Generate Prisma client:
 
 ```bash
-npm run generate:prisma
+npm run prisma:generate
 ```
 
 Apply migrations:
@@ -187,7 +187,7 @@ cp .env.example .env.test
 Generate Prisma client:
 
 ```bash
-npm run generate:prisma
+npm run prisma:generate
 ```
 
 Run tests:

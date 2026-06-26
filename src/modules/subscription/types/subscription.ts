@@ -1,9 +1,14 @@
+import { Repository } from '../../repository';
+
 export interface Subscription {
   id: number;
+  repositoryId: number;
   email: string;
-  repo: string;
   token: string;
   confirmed: boolean;
-  lastSeenTag: string | null;
   createdAt: Date;
 }
+
+export type SubscriptionWithRepository = Subscription & {
+  repository: Repository;
+};

@@ -1,10 +1,10 @@
 import { AppLogger } from '../../../../libs/infrastructure/logger/interfaces/logger.interface';
 import { JobInterface } from '../../../../libs/common/jobs/interfaces/job.interface';
-import { TrackerServiceInterface } from '../interfaces/tracker.service.interface';
+import { ScannerServiceInterface } from '../interfaces/scanner.service.interface';
 
 export class GithubReleaseNotificationJob implements JobInterface {
   constructor(
-    private readonly trackerService: TrackerServiceInterface,
+    private readonly trackerService: ScannerServiceInterface,
     private readonly logger: AppLogger,
   ) {}
   async run(): Promise<void> {

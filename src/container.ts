@@ -8,7 +8,7 @@ import { GithubClient } from './modules/github/github.client';
 import { GithubService } from './modules/github/github.service';
 import { GithubClientInterface } from './modules/github/interfaces/github.client.interface';
 import { GithubRateLimiter } from './modules/github/utils/github-rate-limiter';
-import { GithubReleaseNotificationJob } from './modules/tracker/jobs/github-repo-release.job';
+import { GithubReleaseNotificationJob } from './modules/scanner/jobs/github-repo-release.job';
 import { JobsManager } from './jobs-manager';
 import { UnconfirmedSubscriptionsCleanupJob } from './modules/subscription/jobs/unconfirmed-subscriptions.job';
 import { SubscriptionController } from './modules/subscription/subscription.controller';
@@ -26,7 +26,10 @@ import { RabbitMqProducer } from '../libs/infrastructure/message-broker/rabbitmq
 import { MAIN_EXCHANGE } from '../libs/contracts/main/events/exchanges';
 import { SubscriptionEventProducer } from './modules/subscription/subscription-event.producer';
 import { SubscriptionProducerMapper } from './modules/subscription/mappers/subscription-producer.mapper';
-import { TrackerService } from './modules/tracker/tracker.service';
+import { ScannerService } from './modules/scanner/scanner.service';
+import { RepositoryPrismaRepository } from './modules/repository/repository-prisma.repository';
+import { RepositoryPrismaMapper } from './modules/repository/mappers/repository-prisma.mapper';
+import { RepositoryService } from './modules/repository/repository.service';
 
 export type ContainerOverrides = Partial<{
   logger: AppLogger;
@@ -50,6 +53,11 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
     overrides?.githubClient || new GithubClient(githubRateLimiter, githubClientMapper, env);
   const githubService = new GithubService(githubClient);
 
+  // Repository
+  const repositoryRepositoryMapper = new RepositoryPrismaMapper();
+  const repositoryRepository = new RepositoryPrismaRepository(prisma, repositoryRepositoryMapper);
+  const repositoryService = new RepositoryService(repositoryRepository, githubService);
+
   // Subscription
   const subscriptionProducerMapper = new SubscriptionProducerMapper();
   const subscriptionBaseMessageProducer = new RabbitMqProducer(rabbitMqConnection, MAIN_EXCHANGE);
@@ -63,7 +71,7 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   const subscriptionService = new SubscriptionService(
     subscriptionRepository,
     subscriptionEventProducer,
-    githubService,
+    repositoryService,
     env.APP_BASE_URL,
   );
   const subscriptionControllerMapper = new SubscriptionControllerMapper();
@@ -73,8 +81,9 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   );
 
   // Tracker
-  const trackerService = new TrackerService(
+  const scannerService = new ScannerService(
     subscriptionService,
+    repositoryService,
     githubService,
     subscriptionEventProducer,
     logger,
@@ -82,7 +91,7 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   );
 
   // Jobs
-  const githubRepositoryReleaseJob = new GithubReleaseNotificationJob(trackerService, logger);
+  const githubRepositoryReleaseJob = new GithubReleaseNotificationJob(scannerService, logger);
 
   const unconfirmedSubscriptionsCleanupJob = new UnconfirmedSubscriptionsCleanupJob(
     logger,
@@ -110,7 +119,7 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
       subscription: { subscriptionBaseMessageProducer, subscriptionEventProducer },
     },
     controllers: { subscriptionController, metricsController },
-    services: { subscriptionService, githubService },
+    services: { subscriptionService, githubService, repositoryService, scannerService },
   };
 }
 

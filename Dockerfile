@@ -14,7 +14,7 @@ FROM base AS deps
 RUN npm ci
 
 # Generate Prisma client
-RUN npm run generate:prisma
+RUN npm run prisma:generate
 
 # --- Migration stage ---
 FROM deps AS migration

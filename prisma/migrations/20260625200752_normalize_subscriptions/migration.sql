@@ -35,10 +35,3 @@ ALTER TABLE "subscriptions"
 ALTER TABLE "subscriptions"
   ADD CONSTRAINT "subscriptions_repository_id_fkey"
   FOREIGN KEY ("repository_id") REFERENCES "repositories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- Next migration
--- ALTER TABLE "subscriptions" 
--- DROP COLUMN "last_seen_tag",
--- DROP COLUMN "repo";
--- DROP CONSTRAINT "subscriptions_email_repo_key"
--- DROP INDEX "subscriptions_email_repo_key"

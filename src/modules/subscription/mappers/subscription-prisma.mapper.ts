@@ -1,8 +1,11 @@
-import { Subscription as PrismaSubscription } from '../../../generated/prisma/client';
-import { SubscriptionPrismaMapperInterface } from '../interfaces/subscription.mapper.interface';
-import { Subscription } from '../types/subscription';
+import type { Subscription as PrismaSubscription, Prisma } from '../../../generated/prisma/client';
+import { Subscription, SubscriptionWithRepository } from '../types/subscription';
 
-export class SubscriptionPrismaMapper implements SubscriptionPrismaMapperInterface {
+type PrismaSubscriptionWithRepository = Prisma.SubscriptionGetPayload<{
+  include: { repository: true };
+}>;
+
+export class SubscriptionPrismaMapper {
   toSubscription(prismaSubscription: PrismaSubscription): Subscription;
   toSubscription(prismaSubscription: PrismaSubscription | null): Subscription | null;
   toSubscription(prismaSubscription: PrismaSubscription | null): Subscription | null {
@@ -10,16 +13,41 @@ export class SubscriptionPrismaMapper implements SubscriptionPrismaMapperInterfa
 
     return {
       id: prismaSubscription.id,
+      repositoryId: prismaSubscription.repositoryId,
       email: prismaSubscription.email,
-      repo: prismaSubscription.repo,
       token: prismaSubscription.token,
       confirmed: prismaSubscription.confirmed,
-      lastSeenTag: prismaSubscription.lastSeenTag,
       createdAt: prismaSubscription.createdAt,
     };
   }
 
   toSubscriptions(prismaSubscription: PrismaSubscription[]): Subscription[] {
     return prismaSubscription.map((pSub) => this.toSubscription(pSub));
+  }
+
+  toSubscriptionWithRepository(
+    prismaSubscriptionWithRepository: PrismaSubscriptionWithRepository,
+  ): SubscriptionWithRepository {
+    const { repository: prismaRepository, ...prismaSubscription } =
+      prismaSubscriptionWithRepository;
+
+    const subscription = this.toSubscription(prismaSubscription);
+    return {
+      ...subscription,
+      repository: {
+        id: prismaRepository.id,
+        repo: prismaRepository.repoName,
+        lastSeenTag: prismaRepository.lastSeenTag,
+        createdAt: prismaRepository.createdAt,
+      },
+    };
+  }
+
+  toSubscriptionsWithRepository(
+    prismaSubscriptionsWithRepository: PrismaSubscriptionWithRepository[],
+  ): SubscriptionWithRepository[] {
+    return prismaSubscriptionsWithRepository.map((pSubRepo) =>
+      this.toSubscriptionWithRepository(pSubRepo),
+    );
   }
 }
