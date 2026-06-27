@@ -1,4 +1,4 @@
-import { Repository } from '../../repository';
+import { Repository } from '../../../../apps/tracker/src/modules/repository';
 
 export interface Subscription {
   id: number;

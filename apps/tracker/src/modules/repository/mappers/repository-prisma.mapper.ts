@@ -1,4 +1,4 @@
-import { Repository as PrismaRepository } from '../../../generated/prisma/client';
+import { Repository as PrismaRepository } from '../../../../../../libs/database/generated/prisma/client';
 import { Repository } from '../types/repository';
 import { RepositoryCreateInput } from '../types/repository-repository';
 

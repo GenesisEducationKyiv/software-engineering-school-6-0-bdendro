@@ -1,3 +1,5 @@
+import { RepositoryReleaseDetectedEvent } from '../../tracker/events/scanner.produce.contract';
+
 export interface SubscriptionCreatedEvent {
   email: string;
   confirmationUrl: string;
@@ -15,17 +17,8 @@ export interface SubscriptionUnsubscribedEvent {
   repo: string;
 }
 
-export interface RepositoryRelease {
-  id: number;
-  repoName: string;
-  tagName: string;
-  name: string | null;
-  htmlUrl: string;
-  publishedAt: string | null;
-}
-
 export interface SubscriptionRepositoryReleasedEvent {
   email: string;
-  release: RepositoryRelease;
+  release: RepositoryReleaseDetectedEvent;
   unsubscribeUrl: string;
 }

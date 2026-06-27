@@ -1,5 +1,5 @@
-import { AppLogger } from '../../../../libs/infrastructure/logger/interfaces/logger.interface';
-import { JobInterface } from '../../../../libs/common/jobs/interfaces/job.interface';
+import { AppLogger } from '../../../../../../libs/infrastructure/logger/interfaces/logger.interface';
+import { JobInterface } from '../../../../../../libs/common/jobs/interfaces/job.interface';
 import { ScannerServiceInterface } from '../interfaces/scanner.service.interface';
 
 export class GithubReleaseNotificationJob implements JobInterface {

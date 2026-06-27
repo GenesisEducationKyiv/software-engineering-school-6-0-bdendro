@@ -1,4 +1,4 @@
-import { ERROR_MESSAGES } from '../../../../libs/common/utils/errors/get-error-message';
+import { ERROR_MESSAGES } from '../../../../../../libs/common/utils/errors/get-error-message';
 import { REPOSITORY_NAME } from './repository.const';
 
 export const REPOSITORY_ERROR_MESSAGES = {

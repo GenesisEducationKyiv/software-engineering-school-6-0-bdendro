@@ -1,4 +1,4 @@
-import { GithubRelease } from '../../../modules/github';
+import { GithubRelease } from '../../../../apps/tracker/src/modules/github';
 
 export interface RepositoryReleaseNotificationSenderInterface {
   sendRepositoryReleaseNotification(

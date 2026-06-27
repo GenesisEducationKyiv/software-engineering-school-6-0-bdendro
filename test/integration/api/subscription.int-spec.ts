@@ -8,12 +8,12 @@ import { env } from '../../../src/config/env';
 import type { PrismaDBClient } from '../../../src/infrastructure/database/prisma';
 import type { AppLogger } from '../../../libs/infrastructure/logger/interfaces/logger.interface';
 import type { SubscribeBody } from '../../../src/modules/subscription/schemas/subscription.schema';
-import type { SubscriptionCreateInput } from '../../../src/generated/prisma/models';
+import type { SubscriptionCreateInput } from '../../../libs/database/generated/prisma/models';
 import type {
   GithubLatestReleaseApiResponse as GithubLatestReleaseApiFullResponse,
   GithubRepositoryApiResponse as GithubRepositoryApiFullResponse,
-} from '../../../src/modules/github/dto/github-api.response.dto';
-import { GithubRateLimiterInterface } from '../../../src/modules/github/utils/github-rate-limiter';
+} from '../../../apps/tracker/src/modules/github/dto/github-api.response.dto';
+import { GithubRateLimiterInterface } from '../../../apps/tracker/src/modules/github/utils/github-rate-limiter';
 import { RabbitMqConnection } from '../../../libs/infrastructure/message-broker/rabbitmq.connection';
 import { SUBSCRIPTION_EVENT_ROUTING_KEYS } from '../../../libs/contracts/main/events/routing-keys';
 

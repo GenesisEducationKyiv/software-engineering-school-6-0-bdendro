@@ -1,8 +1,8 @@
 import { ConflictError, NotFoundError } from '../../../libs/common/utils/errors/custom-errors';
-import { Prisma, PrismaClient } from '../../generated/prisma/client';
+import { Prisma, PrismaClient } from '../../../libs/database/generated/prisma/client';
 import { Subscription, SubscriptionWithRepository } from './types/subscription';
 import { SUBSCRIPTION_ERROR_MESSAGES } from './constants/error-messages';
-import { PRISMA_ERROR_CODES } from '../../../libs/infrastructure/db/prisma/constants/prisma.const';
+import { PRISMA_ERROR_CODES } from '../../../libs/infrastructure/database/prisma/constants/prisma.const';
 import { SubscriptionRepositoryInterface } from './interfaces/subscription.repository.interface';
 import { SubscriptionCreateInput, SubscriptionUpdateInput } from './types/subscription-repository';
 import { SubscriptionPrismaMapper } from './mappers/subscription-prisma.mapper';

@@ -7,7 +7,7 @@ import { SUBSCRIPTION_ERROR_MESSAGES } from './constants/error-messages';
 import { Subscription, SubscriptionWithRepository } from './types/subscription';
 import { buildConfirmationUrl, buildUnsubscribeUrl } from './utils/build-url';
 import { SubscriptionEventProducerInterface } from './interfaces/subscription-event.producer';
-import { RepositoryServiceInterface } from '../repository';
+import { RepositoryServiceInterface } from '../../../apps/tracker/src/modules/repository';
 
 export class SubscriptionService implements SubscriptionServiceInterface {
   constructor(

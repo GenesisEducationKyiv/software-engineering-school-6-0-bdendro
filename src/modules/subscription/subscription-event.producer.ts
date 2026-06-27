@@ -6,7 +6,7 @@ import {
 } from '../../../libs/contracts/main/events/main.produce.contract';
 import { SUBSCRIPTION_EVENT_ROUTING_KEYS } from '../../../libs/contracts/main/events/routing-keys';
 import type { MessageProducerInterface } from '../../../libs/infrastructure/message-broker/interfaces/message.producer.interface';
-import { GithubRelease } from '../github';
+import { GithubRelease } from '../../../apps/tracker/src/modules/github';
 import {
   RepositoryReleaseEventProducerInterface,
   SubscriptionEventProducerInterface,

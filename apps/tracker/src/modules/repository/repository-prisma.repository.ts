@@ -1,6 +1,9 @@
-import { ConflictError, NotFoundError } from '../../../libs/common/utils/errors/custom-errors';
-import { PRISMA_ERROR_CODES } from '../../../libs/infrastructure/db/prisma/constants/prisma.const';
-import { Prisma, PrismaClient } from '../../generated/prisma/client';
+import {
+  ConflictError,
+  NotFoundError,
+} from '../../../../../libs/common/utils/errors/custom-errors';
+import { PRISMA_ERROR_CODES } from '../../../../../libs/infrastructure/database/prisma/constants/prisma.const';
+import { Prisma, PrismaClient } from '../../../../../libs/database/generated/prisma/client';
 import { REPOSITORY_ERROR_MESSAGES } from './constants/error-messages';
 import { RepositoryRepositoryInterface } from './interfaces/repository.repository.interface';
 import { RepositoryPrismaMapper } from './mappers/repository-prisma.mapper';

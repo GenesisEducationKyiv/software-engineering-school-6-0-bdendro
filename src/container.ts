@@ -4,17 +4,17 @@ import { PinoLogger } from '../libs/infrastructure/logger/pino-logger';
 import { Env } from './config/env';
 import { createLoggerConfig } from './config/logger.config';
 import { createPrismaClient, PrismaDBClient } from './infrastructure/database/prisma';
-import { GithubClient } from './modules/github/github.client';
-import { GithubService } from './modules/github/github.service';
-import { GithubClientInterface } from './modules/github/interfaces/github.client.interface';
-import { GithubRateLimiter } from './modules/github/utils/github-rate-limiter';
-import { GithubReleaseNotificationJob } from './modules/scanner/jobs/github-repo-release.job';
+import { GithubClient } from '../apps/tracker/src/modules/github/github.client';
+import { GithubService } from '../apps/tracker/src/modules/github/github.service';
+import { GithubClientInterface } from '../apps/tracker/src/modules/github/interfaces/github.client.interface';
+import { GithubRateLimiter } from '../apps/tracker/src/modules/github/utils/github-rate-limiter';
+import { GithubReleaseNotificationJob } from '../apps/tracker/src/modules/scanner/jobs/github-repo-release.job';
 import { JobsManager } from './jobs-manager';
 import { UnconfirmedSubscriptionsCleanupJob } from './modules/subscription/jobs/unconfirmed-subscriptions.job';
 import { SubscriptionController } from './modules/subscription/subscription.controller';
 import { SubscriptionRepository } from './modules/subscription/subscription.repository';
 import { SubscriptionService } from './modules/subscription/subscription.service';
-import { GithubClientMapper } from './modules/github/mappers/github-client.mapper';
+import { GithubClientMapper } from '../apps/tracker/src/modules/github/mappers/github-client.mapper';
 import { SubscriptionPrismaMapper } from './modules/subscription/mappers/subscription-prisma.mapper';
 import { SubscriptionControllerMapper } from './modules/subscription/mappers/subscription-controller.mapper';
 import { MetricsController } from '../libs/infrastructure/metrics/metrics.controller';
@@ -26,10 +26,10 @@ import { RabbitMqProducer } from '../libs/infrastructure/message-broker/rabbitmq
 import { MAIN_EXCHANGE } from '../libs/contracts/main/events/exchanges';
 import { SubscriptionEventProducer } from './modules/subscription/subscription-event.producer';
 import { SubscriptionProducerMapper } from './modules/subscription/mappers/subscription-producer.mapper';
-import { ScannerService } from './modules/scanner/scanner.service';
-import { RepositoryPrismaRepository } from './modules/repository/repository-prisma.repository';
-import { RepositoryPrismaMapper } from './modules/repository/mappers/repository-prisma.mapper';
-import { RepositoryService } from './modules/repository/repository.service';
+import { ScannerService } from '../apps/tracker/src/modules/scanner/scanner.service';
+import { RepositoryPrismaRepository } from '../apps/tracker/src/modules/repository/repository-prisma.repository';
+import { RepositoryPrismaMapper } from '../apps/tracker/src/modules/repository/mappers/repository-prisma.mapper';
+import { RepositoryService } from '../apps/tracker/src/modules/repository/repository.service';
 
 export type ContainerOverrides = Partial<{
   logger: AppLogger;

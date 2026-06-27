@@ -1,11 +1,10 @@
 import { AppLogger } from '../../../libs/infrastructure/logger/interfaces/logger.interface';
-import { NotificationRabbitMqEventConsumer } from './notification/notification-rabbitmq.consumer';
 
 export class ConsumerManager {
   private isRunning: boolean = false;
 
   constructor(
-    private readonly notificationRabbitMqEventConsumer: NotificationRabbitMqEventConsumer,
+    // private readonly notificationRabbitMqEventConsumer: NotificationRabbitMqEventConsumer,
     private readonly logger: AppLogger,
   ) {}
 
@@ -15,8 +14,10 @@ export class ConsumerManager {
       return;
     }
 
-    await this.notificationRabbitMqEventConsumer.start();
-    this.logger.info('Notification consumer successfully started.');
+    // todo: remove
+    await Promise.resolve();
+    // await this.notificationRabbitMqEventConsumer.start();
+    // this.logger.info('Notification consumer successfully started.');
 
     this.isRunning = true;
   }
@@ -27,8 +28,10 @@ export class ConsumerManager {
       return;
     }
 
-    await this.notificationRabbitMqEventConsumer.stop();
-    this.logger.info('Notification consumer successfully stopped.');
+    // todo: remove
+    await Promise.resolve();
+    // await this.notificationRabbitMqEventConsumer.stop();
+    // this.logger.info('Notification consumer successfully stopped.');
 
     this.isRunning = false;
   }

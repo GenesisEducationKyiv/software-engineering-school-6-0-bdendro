@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance } from 'axios';
-import { GithubRelease } from '../../modules/github';
+import { GithubRelease } from '../../../apps/tracker/src/modules/github';
 import { RepositoryReleaseNotificationSenderInterface } from './interfaces/repository-release-email.sender.interface';
 import { SubscriptionNotificationSenderInterface } from './interfaces/subscription-email.service.interface';
 import { SubscriptionProducerMapper } from '../../modules/subscription/mappers/subscription-producer.mapper';
