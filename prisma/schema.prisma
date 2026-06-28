@@ -9,26 +9,37 @@ datasource db {
   provider = "postgresql"
 }
 
+// Subscription DB
 model Subscription {
-  id           Int        @id @default(autoincrement())
-  repositoryId Int        @map("repository_id")
-  repository   Repository @relation(fields: [repositoryId], references: [id])
-  email        String     
-  token        String     @unique
-  confirmed    Boolean    @default(false)
-  createdAt    DateTime   @default(now()) @map("created_at")
+  id           Int                    @id @default(autoincrement())
+  repositoryId Int                    @map("repository_id")
+  repository   SubscriptionRepository @relation(fields: [repositoryId], references: [id])
+  email        String
+  token        String                 @unique
+  confirmed    Boolean                @default(false)
+  createdAt    DateTime               @default(now()) @map("created_at")
 
   @@unique([email, repositoryId])
   @@index([email])
   @@map("subscriptions")
 }
 
-model Repository {
+model SubscriptionRepository {
   id            Int            @id @default(autoincrement())
   repoName      String         @unique @map("repo_name")
   lastSeenTag   String?        @map("last_seen_tag")
   createdAt     DateTime       @default(now()) @map("created_at")
   subscriptions Subscription[]
+
+  @@map("subscription_repositories")
+}
+
+// Tracker DB
+model Repository {
+  id          Int      @id @default(autoincrement())
+  repoName    String   @unique @map("repo_name")
+  lastSeenTag String?  @map("last_seen_tag")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("repositories")
 }
