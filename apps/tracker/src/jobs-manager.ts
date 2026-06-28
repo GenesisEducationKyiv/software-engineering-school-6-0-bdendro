@@ -27,11 +27,11 @@ export class JobsManager {
         noOverlap: true,
       },
     );
-    this.logger.info('GitHub release notifications job successfully started.');
+    this.logger.info('GitHub release scanning job successfully started.');
   }
 
   async stopJobs() {
     if (this.githubReleaseNotificationTask) await this.githubReleaseNotificationTask.destroy();
-    this.logger.info('GitHub release notifications job successfully stopped.');
+    this.logger.info('GitHub release scanning job successfully stopped.');
   }
 }

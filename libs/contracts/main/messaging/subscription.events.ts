@@ -1,4 +1,4 @@
-import { RepositoryReleaseDetectedEvent } from '../../tracker/events/scanner.produce.contract';
+import { RepositoryReleaseDetectedEvent } from '../../tracker/messaging/release.events';
 
 export interface SubscriptionCreatedEvent {
   email: string;

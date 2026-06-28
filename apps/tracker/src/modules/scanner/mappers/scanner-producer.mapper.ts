@@ -1,4 +1,4 @@
-import { RepositoryReleaseDetectedEvent } from '../../../../../../libs/contracts/tracker/events/scanner.produce.contract';
+import { RepositoryReleaseDetectedEvent } from '../../../../../../libs/contracts/tracker/messaging/release.events';
 import { GithubRelease } from '../../github';
 
 export class ScannerProducerMapper {

@@ -1,4 +1,4 @@
-import { TRACKER_EXCHANGE } from '../../../libs/contracts/tracker/events/exchanges';
+import { TRACKER_EXCHANGE } from '../../../libs/contracts/tracker/messaging/exchanges';
 import { AppLogger } from '../../../libs/infrastructure/logger/interfaces/logger.interface';
 import { PinoLogger } from '../../../libs/infrastructure/logger/pino-logger';
 import {
@@ -16,6 +16,7 @@ import { GithubClientInterface } from './modules/github/interfaces/github.client
 import { GithubClientMapper } from './modules/github/mappers/github-client.mapper';
 import { GithubRateLimiter } from './modules/github/utils/github-rate-limiter';
 import { RepositoryPrismaMapper } from './modules/repository/mappers/repository-prisma.mapper';
+import { RepositoryEventProducer } from './modules/repository/repository-event.producer';
 import { RepositoryPrismaRepository } from './modules/repository/repository-prisma.repository';
 import { RepositoryService } from './modules/repository/repository.service';
 import { GithubReleaseNotificationJob } from './modules/scanner/jobs/github-repo-release.job';
@@ -51,16 +52,23 @@ export function createContainer(env: Env, options?: ContainerOptions) {
   const githubService = new GithubService(githubClient);
 
   // Repository
+  const repositoryBaseMessageProducer = new RabbitMqProducer(rabbitMqConnection, TRACKER_EXCHANGE);
+  const repositoryEventProducer = new RepositoryEventProducer(repositoryBaseMessageProducer);
+
   const repositoryRepositoryMapper = new RepositoryPrismaMapper();
   const repositoryRepository = new RepositoryPrismaRepository(prisma, repositoryRepositoryMapper);
-  const repositoryService = new RepositoryService(repositoryRepository, githubService);
+  const repositoryService = new RepositoryService(
+    repositoryRepository,
+    githubService,
+    repositoryEventProducer,
+  );
 
   // Scanner event producer
-  const trackerBaseMessageProducer = new RabbitMqProducer(rabbitMqConnection, TRACKER_EXCHANGE);
+  const scannerBaseMessageProducer = new RabbitMqProducer(rabbitMqConnection, TRACKER_EXCHANGE);
 
   const scannerProducerMapper = new ScannerProducerMapper();
   const scannerEventProducer = new ScannerEventProducer(
-    trackerBaseMessageProducer,
+    scannerBaseMessageProducer,
     scannerProducerMapper,
   );
 
@@ -84,7 +92,7 @@ export function createContainer(env: Env, options?: ContainerOptions) {
     githubRateLimiter,
     jobsManager,
     producers: {
-      base: { trackerBaseMessageProducer },
+      base: { trackerBaseMessageProducer: scannerBaseMessageProducer },
       scanner: { scannerEventProducer },
     },
     services: { githubService, repositoryService, scannerService },

@@ -25,7 +25,7 @@ model Subscription {
 }
 
 model SubscriptionRepository {
-  id            Int            @id @default(autoincrement())
+  id            Int            @id
   repoName      String         @unique @map("repo_name")
   lastSeenTag   String?        @map("last_seen_tag")
   createdAt     DateTime       @default(now()) @map("created_at")

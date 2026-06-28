@@ -80,9 +80,6 @@ export class RepositoryPrismaRepository implements RepositoryRepositoryInterface
         if (err.code === PRISMA_ERROR_CODES.RECORD_NOT_FOUND)
           throw new NotFoundError(REPOSITORY_ERROR_MESSAGES.NOT_FOUND);
 
-        if (err.code === PRISMA_ERROR_CODES.FOREIGN_KEY_CONSTRAINT)
-          throw new ConflictError(REPOSITORY_ERROR_MESSAGES.IN_USE);
-
         throw err;
       }
       throw err;

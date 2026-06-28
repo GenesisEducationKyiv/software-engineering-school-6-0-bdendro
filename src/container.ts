@@ -3,18 +3,11 @@ import { AppLogger } from '../libs/infrastructure/logger/interfaces/logger.inter
 import { PinoLogger } from '../libs/infrastructure/logger/pino-logger';
 import { Env } from './config/env';
 import { createLoggerConfig } from './config/logger.config';
-import { createPrismaClient, PrismaDBClient } from './infrastructure/database/prisma';
-import { GithubClient } from '../apps/tracker/src/modules/github/github.client';
-import { GithubService } from '../apps/tracker/src/modules/github/github.service';
-import { GithubClientInterface } from '../apps/tracker/src/modules/github/interfaces/github.client.interface';
-import { GithubRateLimiter } from '../apps/tracker/src/modules/github/utils/github-rate-limiter';
-import { GithubReleaseNotificationJob } from '../apps/tracker/src/modules/scanner/jobs/github-repo-release.job';
 import { JobsManager } from './jobs-manager';
 import { UnconfirmedSubscriptionsCleanupJob } from './modules/subscription/jobs/unconfirmed-subscriptions.job';
 import { SubscriptionController } from './modules/subscription/subscription.controller';
 import { SubscriptionRepository } from './modules/subscription/subscription.repository';
 import { SubscriptionService } from './modules/subscription/subscription.service';
-import { GithubClientMapper } from '../apps/tracker/src/modules/github/mappers/github-client.mapper';
 import { SubscriptionPrismaMapper } from './modules/subscription/mappers/subscription-prisma.mapper';
 import { SubscriptionControllerMapper } from './modules/subscription/mappers/subscription-controller.mapper';
 import { MetricsController } from '../libs/infrastructure/metrics/metrics.controller';
@@ -23,19 +16,21 @@ import {
   RabbitMqConnection,
 } from '../libs/infrastructure/message-broker/rabbitmq.connection';
 import { RabbitMqProducer } from '../libs/infrastructure/message-broker/rabbitmq.producer';
-import { MAIN_EXCHANGE } from '../libs/contracts/main/events/exchanges';
+import { MAIN_EXCHANGE } from '../libs/contracts/main/messaging/exchanges';
 import { SubscriptionEventProducer } from './modules/subscription/subscription-event.producer';
 import { SubscriptionProducerMapper } from './modules/subscription/mappers/subscription-producer.mapper';
-import { ScannerService } from '../apps/tracker/src/modules/scanner/scanner.service';
-import { RepositoryPrismaRepository } from '../apps/tracker/src/modules/repository/repository-prisma.repository';
-import { RepositoryPrismaMapper } from '../apps/tracker/src/modules/repository/mappers/repository-prisma.mapper';
-import { RepositoryService } from '../apps/tracker/src/modules/repository/repository.service';
+import { ConsumerManager } from './consumer-manager';
+import { SubscriptionRepositoryRabbitMqEventConsumer } from './modules/repository/subscription-repository-rabbitmq.consumer';
+import { RabbitMqDlxProducer } from '../libs/infrastructure/message-broker/rabbitmq-dlx.producer';
+import { SUBSCRIPTION_DLQ, SUBSCRIPTION_DLX } from './common/constants/messaging.const';
+import { createPrismaClient, PrismaDBClient } from './infrastructure/database/prisma';
+import { SubscriptionRepositoryPrismaMapper } from './modules/repository/mappers/repository-prisma.mapper';
+import { SubscriptionRepositoryPrismaRepository } from './modules/repository/repository-prisma.repository';
 
 export type ContainerOverrides = Partial<{
   logger: AppLogger;
   prisma: PrismaDBClient;
   rabbitMqConnection: RabbitMqConnection;
-  githubClient: GithubClientInterface;
 }>;
 
 export function createContainer(env: Env, overrides?: ContainerOverrides) {
@@ -46,17 +41,26 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   const rabbitMqConnection =
     overrides?.rabbitMqConnection || createRabbitMqConnection(env.RABBITMQ_URL, logger);
 
-  // GitHub
-  const githubRateLimiter = new GithubRateLimiter();
-  const githubClientMapper = new GithubClientMapper();
-  const githubClient =
-    overrides?.githubClient || new GithubClient(githubRateLimiter, githubClientMapper, env);
-  const githubService = new GithubService(githubClient);
+  // Dead letter exchange producer
+  const dlxProducer = new RabbitMqDlxProducer(
+    rabbitMqConnection,
+    SUBSCRIPTION_DLX,
+    SUBSCRIPTION_DLQ,
+  );
 
-  // Repository
-  const repositoryRepositoryMapper = new RepositoryPrismaMapper();
-  const repositoryRepository = new RepositoryPrismaRepository(prisma, repositoryRepositoryMapper);
-  const repositoryService = new RepositoryService(repositoryRepository, githubService);
+  // Read Repository
+  const repositoryPrismaMapper = new SubscriptionRepositoryPrismaMapper();
+  const repositoryPrismaRepository = new SubscriptionRepositoryPrismaRepository(
+    prisma,
+    repositoryPrismaMapper,
+  );
+
+  const repositoryRabbitMqEventConsumer = new SubscriptionRepositoryRabbitMqEventConsumer(
+    rabbitMqConnection,
+    repositoryPrismaRepository,
+    dlxProducer,
+    logger,
+  );
 
   // Subscription
   const subscriptionProducerMapper = new SubscriptionProducerMapper();
@@ -68,43 +72,32 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
 
   const subscriptionRepositoryMapper = new SubscriptionPrismaMapper();
   const subscriptionRepository = new SubscriptionRepository(prisma, subscriptionRepositoryMapper);
-  const subscriptionService = new SubscriptionService(
-    subscriptionRepository,
-    subscriptionEventProducer,
-    repositoryService,
-    env.APP_BASE_URL,
-  );
+  const subscriptionService = null;
+  // new SubscriptionService(
+  // subscriptionRepository,
+  // subscriptionEventProducer,
+  // repositoryService,
+  // env.APP_BASE_URL,
+  // );
   const subscriptionControllerMapper = new SubscriptionControllerMapper();
-  const subscriptionController = new SubscriptionController(
-    subscriptionService,
-    subscriptionControllerMapper,
-  );
+  const subscriptionController = null;
+  // new SubscriptionController(
+  //   subscriptionService,
+  //   subscriptionControllerMapper,
+  // );
 
-  // Tracker
-  const scannerService = new ScannerService(
-    subscriptionService,
-    repositoryService,
-    githubService,
-    subscriptionEventProducer,
-    logger,
-    env.APP_BASE_URL,
-  );
+  // Consumer Manager
+  const consumerManager = new ConsumerManager(repositoryRabbitMqEventConsumer, logger);
 
   // Jobs
-  const githubRepositoryReleaseJob = new GithubReleaseNotificationJob(scannerService, logger);
+  // const unconfirmedSubscriptionsCleanupJob = new UnconfirmedSubscriptionsCleanupJob(
+  //   logger,
+  //   subscriptionService,
+  //   ms(env.UNCONFIRMED_EXPIRATION_TIME as ms.StringValue),
+  // );
 
-  const unconfirmedSubscriptionsCleanupJob = new UnconfirmedSubscriptionsCleanupJob(
-    logger,
-    subscriptionService,
-    ms(env.UNCONFIRMED_EXPIRATION_TIME as ms.StringValue),
-  );
-
-  const jobsManager = new JobsManager(
-    githubRepositoryReleaseJob,
-    unconfirmedSubscriptionsCleanupJob,
-    logger,
-    env,
-  );
+  const jobsManager = { startJobs: () => {}, stopJobs: async () => {} };
+  // new JobsManager(unconfirmedSubscriptionsCleanupJob, logger, env);
 
   // Metrics
   const metricsController = new MetricsController();
@@ -113,13 +106,13 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
     logger,
     prisma,
     rabbitMqConnection,
-    githubRateLimiter,
+    consumerManager,
     jobsManager,
     producers: {
       subscription: { subscriptionBaseMessageProducer, subscriptionEventProducer },
     },
     controllers: { subscriptionController, metricsController },
-    services: { subscriptionService, githubService, repositoryService, scannerService },
+    services: { subscriptionService },
   };
 }
 

@@ -12,4 +12,5 @@ export const repoSchema = z
 
 export const nullableTrimmedStringSchema = z.string().trim().nullable();
 
-export const nullableIsoDateTimeSchema = z.string().trim().pipe(z.iso.datetime()).nullable();
+export const isoDateTimeSchema = z.string().trim().pipe(z.iso.datetime());
+export const nullableIsoDateTimeSchema = isoDateTimeSchema.nullable();

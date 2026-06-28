@@ -6,3 +6,7 @@ export function mapValidationErrorDetails(error: ZodError): ValidationErrorDetai
     return { path: issue.path.map((pathEl) => pathEl.toString()), message: issue.message };
   });
 }
+
+export function mapValidationErrorDetailsToString(details: ValidationErrorDetail[]): string {
+  return details.map((detail) => `${detail.path.join('.')}: ${detail.message}.`).join('\n');
+}

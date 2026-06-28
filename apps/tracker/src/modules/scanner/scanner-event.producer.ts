@@ -1,5 +1,5 @@
-import { REPOSITORY_RELEASE_EVENT_ROUTING_KEYS } from '../../../../../libs/contracts/tracker/events/routing-keys';
-import { RepositoryReleaseDetectedEvent } from '../../../../../libs/contracts/tracker/events/scanner.produce.contract';
+import { REPOSITORY_RELEASE_EVENT_ROUTING_KEYS } from '../../../../../libs/contracts/tracker/messaging/routing-keys';
+import { RepositoryReleaseDetectedEvent } from '../../../../../libs/contracts/tracker/messaging/release.events';
 import { MessageProducerInterface } from '../../../../../libs/infrastructure/message-broker/interfaces/message.producer.interface';
 import { GithubRelease } from '../github';
 import { RepositoryReleaseEventProducerInterface } from './interfaces/scanner-event.producer.interface';

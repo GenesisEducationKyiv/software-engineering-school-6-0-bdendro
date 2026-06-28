@@ -2,8 +2,8 @@ import {
   RepositoryTrackedEvent,
   RepositoryUntrackedEvent,
   RepositoryUpdatedEvent,
-} from '../../../../../libs/contracts/tracker/events/repository.produce.contract';
-import { REPOSITORY_EVENT_ROUTING_KEYS } from '../../../../../libs/contracts/tracker/events/routing-keys';
+} from '../../../../../libs/contracts/tracker/messaging/repository.events';
+import { REPOSITORY_EVENT_ROUTING_KEYS } from '../../../../../libs/contracts/tracker/messaging/routing-keys';
 import { MessageProducerInterface } from '../../../../../libs/infrastructure/message-broker/interfaces/message.producer.interface';
 import { Repository } from './types/repository';
 

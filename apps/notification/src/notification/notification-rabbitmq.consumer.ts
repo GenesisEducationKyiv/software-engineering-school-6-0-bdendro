@@ -2,7 +2,7 @@ import { ChannelWrapper } from 'amqp-connection-manager';
 import { ConfirmChannel, ConsumeMessage } from 'amqplib';
 import type { ZodType } from 'zod';
 import { RabbitMqConnection } from '../../../../libs/infrastructure/message-broker/rabbitmq.connection';
-import { MAIN_EXCHANGE } from '../../../../libs/contracts/main/events/exchanges';
+import { MAIN_EXCHANGE } from '../../../../libs/contracts/main/messaging/exchanges';
 import {
   NOTIFICATION_DLQ,
   NOTIFICATION_DLX,
@@ -12,7 +12,7 @@ import {
 import { MessageConsumerInterface } from '../../../../libs/infrastructure/message-broker/interfaces/message.consumer.interface';
 import { EmailServiceInterface } from './interfaces/email.service.interface';
 import { AppLogger } from '../../../../libs/infrastructure/logger/interfaces/logger.interface';
-import { SUBSCRIPTION_EVENT_ROUTING_KEYS } from '../../../../libs/contracts/main/events/routing-keys';
+import { SUBSCRIPTION_EVENT_ROUTING_KEYS } from '../../../../libs/contracts/main/messaging/routing-keys';
 import { validate } from '../../../../libs/common/utils/validation/validate';
 import {
   subscriptionConfirmedEventSchema,

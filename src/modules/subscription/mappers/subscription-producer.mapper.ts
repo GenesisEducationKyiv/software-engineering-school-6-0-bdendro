@@ -1,4 +1,4 @@
-import { RepositoryRelease } from '../../../../libs/contracts/main/events/main.produce.contract';
+import { RepositoryRelease } from '../../../../libs/contracts/main/messaging/subscription.events';
 import { GithubRelease } from '../../../../apps/tracker/src/modules/github';
 
 export class SubscriptionProducerMapper {
