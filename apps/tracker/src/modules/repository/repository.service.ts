@@ -1,5 +1,4 @@
-import { NotFoundError } from '../../../../../libs/common/utils/errors/custom-errors';
-import { GITHUB_ERROR_MESSAGES, GithubServiceInterface } from '../github';
+import { GithubServiceInterface } from '../github';
 import { RepositoryRepositoryInterface } from './interfaces/repository.repository.interface';
 import { RepositoryServiceInterface } from './interfaces/repository.service.interface';
 import { RepositoryEventProducer } from './repository-event.producer';
@@ -21,8 +20,7 @@ export class RepositoryService implements RepositoryServiceInterface {
   }
 
   async track(repo: string): Promise<Repository> {
-    const isRepoExists = await this.githubService.isRepositoryExists(repo);
-    if (!isRepoExists) throw new NotFoundError(GITHUB_ERROR_MESSAGES.REPO_NOT_FOUND);
+    await this.githubService.ensureRepositoryExists(repo);
 
     const repository = await this.repositoryRepository.getByRepoName(repo);
     if (repository) {

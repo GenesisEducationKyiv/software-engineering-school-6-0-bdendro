@@ -63,7 +63,7 @@ describe('SubscriptionService', () => {
     } as jest.Mocked<SubscriptionEventProducerInterface>;
 
     githubService = {
-      isRepositoryExists: jest.fn(),
+      ensureRepositoryExists: jest.fn(),
       getLastRelease: jest.fn(),
     } as jest.Mocked<GithubServiceInterface>;
 
@@ -148,12 +148,12 @@ describe('SubscriptionService', () => {
 
   describe('subscribe', () => {
     it('should create subscription with release tag and send confirmation email', async () => {
-      githubService.isRepositoryExists.mockResolvedValue(true);
+      githubService.ensureRepositoryExists.mockResolvedValue(true);
       githubService.getLastRelease.mockResolvedValue(release);
 
       await subscriptionService.subscribe(subscribeBody);
 
-      expect(githubService.isRepositoryExists).toHaveBeenCalledWith(repo);
+      expect(githubService.ensureRepositoryExists).toHaveBeenCalledWith(repo);
       expect(githubService.getLastRelease).toHaveBeenCalledWith(repo);
 
       expect(subscriptionRepository.create).toHaveBeenCalledWith(
@@ -180,18 +180,18 @@ describe('SubscriptionService', () => {
     });
 
     it('should throw NotFoundError when repository does not exist', async () => {
-      githubService.isRepositoryExists.mockResolvedValue(false);
+      githubService.ensureRepositoryExists.mockResolvedValue(false);
 
       await expect(subscriptionService.subscribe(subscribeBody)).rejects.toThrow(NotFoundError);
 
-      expect(githubService.isRepositoryExists).toHaveBeenCalledWith(repo);
+      expect(githubService.ensureRepositoryExists).toHaveBeenCalledWith(repo);
       expect(githubService.getLastRelease).not.toHaveBeenCalled();
       expect(subscriptionRepository.create).not.toHaveBeenCalled();
       expect(subscriptionEventProducer.produceSubscriptionCreated).not.toHaveBeenCalled();
     });
 
     it('should create subscription with null lastSeenTag when release does not exist', async () => {
-      githubService.isRepositoryExists.mockResolvedValue(true);
+      githubService.ensureRepositoryExists.mockResolvedValue(true);
       githubService.getLastRelease.mockResolvedValue(null);
 
       await subscriptionService.subscribe(subscribeBody);
