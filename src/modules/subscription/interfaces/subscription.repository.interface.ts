@@ -5,7 +5,7 @@ export interface SubscriptionRepositoryInterface {
   getSubscriptionByToken(token: string): Promise<Subscription | null>;
   getConfirmedSubscriptions(): Promise<Subscription[]>;
   getSubscriptionsWithRepoByEmail(email: string): Promise<SubscriptionWithRepository[]>;
-  getSubscriptionsByRepo(repositoryId: number): Promise<Subscription[]>;
+  getSubscriptionsByRepo(repo: string): Promise<Subscription[]>;
   create(subscriptionInput: SubscriptionCreateInput): Promise<Subscription>;
   updateByToken(token: string, update: SubscriptionUpdateInput): Promise<Subscription>;
   confirmByToken(token: string): Promise<SubscriptionWithRepository>;

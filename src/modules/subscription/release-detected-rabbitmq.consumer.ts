@@ -5,27 +5,27 @@ import { AppLogger } from '../../../libs/infrastructure/logger/interfaces/logger
 import type { ConfirmChannel, ConsumeMessage } from 'amqplib';
 import { TRACKER_EXCHANGE } from '../../../libs/contracts/tracker/messaging/exchanges';
 import { RabbitMqDlxProducer } from '../../../libs/infrastructure/message-broker/rabbitmq-dlx.producer';
-import {
-  RETRY_TIME_IN_MS,
-  SUBSCRIPTION_REPOSITORY_QUEUE,
-  SUBSCRIPTION_REPOSITORY_RETRY_EXCHANGE,
-  SUBSCRIPTION_REPOSITORY_RETRY_QUEUE,
-} from './constants/messaging.const';
-import { REPOSITORY_EVENT_ROUTING_KEYS } from '../../../libs/contracts/tracker/messaging/routing-keys';
+import { REPOSITORY_RELEASE_EVENT_ROUTING_KEYS } from '../../../libs/contracts/tracker/messaging/routing-keys';
 import { ZodType } from 'zod';
 import { validate } from '../../../libs/common/utils/validation/validate';
 import { ValidationError } from '../../../libs/common/utils/errors/custom-errors';
 import { mapValidationErrorDetailsToString } from '../../../libs/common/utils/validation/map-validation-error-details';
-import { repositoryUpdatedEventSchema } from './schemas/repository.schema';
-import { RepositoryRepositoryWritableInterface } from './interfaces/repository.repository.interface';
+import {
+  RETRY_TIME_IN_MS,
+  SUBSCRIPTION_RELEASE_QUEUE,
+  SUBSCRIPTION_RELEASE_RETRY_EXCHANGE,
+  SUBSCRIPTION_RELEASE_RETRY_QUEUE,
+} from './constants/messaging.const';
+import { repositoryReleaseDetectedEventSchema } from './schemas/repository-release.schema';
+import { SubscriptionServiceInterface } from './interfaces/subscription.service.interface';
 
-export class SubscriptionRepositoryRabbitMqEventConsumer implements MessageConsumerInterface {
+export class ReleaseDetectedRabbitMqEventConsumer implements MessageConsumerInterface {
   private readonly channelWrapper: ChannelWrapper;
   private consumerTag: string | undefined;
 
   constructor(
     connection: RabbitMqConnection,
-    private readonly subscriptionRepositoryRepository: RepositoryRepositoryWritableInterface,
+    private readonly subscriptionService: SubscriptionServiceInterface,
     private readonly dlxProducer: RabbitMqDlxProducer,
     private readonly logger: AppLogger,
   ) {
@@ -58,60 +58,57 @@ export class SubscriptionRepositoryRabbitMqEventConsumer implements MessageConsu
   private async setupChannel(channel: ConfirmChannel) {
     await Promise.all([
       channel.assertExchange(TRACKER_EXCHANGE, 'topic', { durable: true }),
-      channel.assertExchange(SUBSCRIPTION_REPOSITORY_RETRY_EXCHANGE, 'topic', {
+      channel.assertExchange(SUBSCRIPTION_RELEASE_RETRY_EXCHANGE, 'topic', {
         durable: true,
       }),
 
-      channel.assertQueue(SUBSCRIPTION_REPOSITORY_QUEUE, {
+      channel.assertQueue(SUBSCRIPTION_RELEASE_QUEUE, {
         durable: true,
-        deadLetterExchange: SUBSCRIPTION_REPOSITORY_RETRY_EXCHANGE,
+        deadLetterExchange: SUBSCRIPTION_RELEASE_RETRY_EXCHANGE,
       }),
-      channel.assertQueue(SUBSCRIPTION_REPOSITORY_RETRY_QUEUE, {
+      channel.assertQueue(SUBSCRIPTION_RELEASE_RETRY_QUEUE, {
         durable: true,
         deadLetterExchange: TRACKER_EXCHANGE,
-        messageTtl: RETRY_TIME_IN_MS.SUBSCRIPTION_REPOSITORY,
+        messageTtl: RETRY_TIME_IN_MS.SUBSCRIPTION_RELEASE,
       }),
 
       channel.prefetch(10),
     ]);
 
     await channel.bindQueue(
-      SUBSCRIPTION_REPOSITORY_QUEUE,
+      SUBSCRIPTION_RELEASE_QUEUE,
       TRACKER_EXCHANGE,
-      REPOSITORY_EVENT_ROUTING_KEYS.UPDATED,
+      REPOSITORY_RELEASE_EVENT_ROUTING_KEYS.DETECTED,
     );
     await channel.bindQueue(
-      SUBSCRIPTION_REPOSITORY_RETRY_QUEUE,
-      SUBSCRIPTION_REPOSITORY_RETRY_EXCHANGE,
+      SUBSCRIPTION_RELEASE_RETRY_QUEUE,
+      SUBSCRIPTION_RELEASE_RETRY_EXCHANGE,
       '#',
     );
   }
 
   private async startConsumer(channel: ConfirmChannel) {
-    const { consumerTag } = await channel.consume(SUBSCRIPTION_REPOSITORY_QUEUE, (msg) => {
+    const { consumerTag } = await channel.consume(SUBSCRIPTION_RELEASE_QUEUE, (msg) => {
       if (!msg) {
         this.logger.error('Consumer was cancelled by broker. Setup consumer...');
         this.setupChannel(channel)
           .then(() => {
-            this.logger.info(
-              { queue: SUBSCRIPTION_REPOSITORY_QUEUE },
-              'Successfully setup consumer.',
-            );
+            this.logger.info({ queue: SUBSCRIPTION_RELEASE_QUEUE }, 'Successfully setup consumer.');
 
             this.startConsumer(channel)
               .then(() => {
-                this.logger.info({ queue: SUBSCRIPTION_REPOSITORY_QUEUE }, 'Consumer restarted.');
+                this.logger.info({ queue: SUBSCRIPTION_RELEASE_QUEUE }, 'Consumer restarted.');
               })
               .catch((err: unknown) => {
                 this.logger.error(
-                  { err, queue: SUBSCRIPTION_REPOSITORY_QUEUE },
+                  { err, queue: SUBSCRIPTION_RELEASE_QUEUE },
                   'Error while trying to restart consumer.',
                 );
               });
           })
           .catch((err: unknown) => {
             this.logger.error(
-              { err, queue: SUBSCRIPTION_REPOSITORY_QUEUE },
+              { err, queue: SUBSCRIPTION_RELEASE_QUEUE },
               'Error while trying to setup consumer after cancellation.',
             );
           });
@@ -120,7 +117,7 @@ export class SubscriptionRepositoryRabbitMqEventConsumer implements MessageConsu
 
       this.handleMessage(msg, channel).catch((err: unknown) => {
         this.logger.error(
-          { err, queue: SUBSCRIPTION_REPOSITORY_QUEUE },
+          { err, queue: SUBSCRIPTION_RELEASE_QUEUE },
           'Unchecked error while processing repository event.',
         );
       });
@@ -133,16 +130,16 @@ export class SubscriptionRepositoryRabbitMqEventConsumer implements MessageConsu
 
     try {
       switch (routingKey) {
-        case REPOSITORY_EVENT_ROUTING_KEYS.UPDATED:
+        case REPOSITORY_RELEASE_EVENT_ROUTING_KEYS.DETECTED:
           this.logger.info(
-            { routingKey, queue: SUBSCRIPTION_REPOSITORY_QUEUE },
-            'Received repository updated event.',
+            { routingKey, queue: SUBSCRIPTION_RELEASE_QUEUE },
+            'Received repository release event.',
           );
-          await this.handleRepositoryUpdated(msg, channel);
+          await this.handleRepositoryReleaseDetected(msg, channel);
           break;
         default:
           this.logger.warn(
-            { routingKey, queue: SUBSCRIPTION_REPOSITORY_QUEUE },
+            { routingKey, queue: SUBSCRIPTION_RELEASE_QUEUE },
             `Ignored unknown event.`,
           );
           await this.dlxProducer.produceToDlx(msg, 'Unknown event.');
@@ -150,7 +147,7 @@ export class SubscriptionRepositoryRabbitMqEventConsumer implements MessageConsu
       }
     } catch (err) {
       this.logger.error(
-        { err, routingKey, queue: SUBSCRIPTION_REPOSITORY_QUEUE },
+        { err, routingKey, queue: SUBSCRIPTION_RELEASE_QUEUE },
         'Failed to process message.',
       );
 
@@ -158,20 +155,25 @@ export class SubscriptionRepositoryRabbitMqEventConsumer implements MessageConsu
         channel.nack(msg, false, false);
       } catch (err) {
         this.logger.debug(
-          { err, routingKey, queue: SUBSCRIPTION_REPOSITORY_QUEUE },
+          { err, routingKey, queue: SUBSCRIPTION_RELEASE_QUEUE },
           'Channel already closed, skipping nack.',
         );
       }
     }
   }
 
-  private async handleRepositoryUpdated(
+  private async handleRepositoryReleaseDetected(
     msg: ConsumeMessage,
     channel: ConfirmChannel,
   ): Promise<void> {
-    await this.processMessage(msg, channel, repositoryUpdatedEventSchema, async (payload) => {
-      await this.subscriptionRepositoryRepository.updateOrCreate(payload);
-    });
+    await this.processMessage(
+      msg,
+      channel,
+      repositoryReleaseDetectedEventSchema,
+      async (payload) => {
+        await this.subscriptionService.processRepositoryRelease(payload);
+      },
+    );
   }
 
   private async processMessage<T>(
@@ -203,7 +205,7 @@ export class SubscriptionRepositoryRabbitMqEventConsumer implements MessageConsu
 
     if (err instanceof SyntaxError) {
       this.logger.error(
-        { err, routingKey, queue: SUBSCRIPTION_REPOSITORY_QUEUE },
+        { err, routingKey, queue: SUBSCRIPTION_RELEASE_QUEUE },
         'JSON parsing failed. Moving to DLQ.',
       );
 
@@ -214,7 +216,7 @@ export class SubscriptionRepositoryRabbitMqEventConsumer implements MessageConsu
 
     if (err instanceof ValidationError) {
       this.logger.error(
-        { err, routingKey, queue: SUBSCRIPTION_REPOSITORY_QUEUE },
+        { err, routingKey, queue: SUBSCRIPTION_RELEASE_QUEUE },
         'Validation failed. Moving to DLQ.',
       );
       const message = mapValidationErrorDetailsToString(err.details);
@@ -225,7 +227,7 @@ export class SubscriptionRepositoryRabbitMqEventConsumer implements MessageConsu
     }
 
     this.logger.warn(
-      { err, routingKey, queue: SUBSCRIPTION_REPOSITORY_QUEUE },
+      { err, routingKey, queue: SUBSCRIPTION_RELEASE_QUEUE },
       'Internal error while processing. Move to retry queue.',
     );
 

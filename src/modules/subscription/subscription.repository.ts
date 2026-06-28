@@ -33,9 +33,9 @@ export class SubscriptionRepository implements SubscriptionRepositoryInterface {
     );
   }
 
-  async getSubscriptionsByRepo(repositoryId: number): Promise<Subscription[]> {
+  async getSubscriptionsByRepo(repo: string): Promise<Subscription[]> {
     return this.mapper.toSubscriptions(
-      await this.prisma.subscription.findMany({ where: { repositoryId } }),
+      await this.prisma.subscription.findMany({ where: { repository: { repoName: repo } } }),
     );
   }
 

@@ -6,13 +6,20 @@ import { NotFoundError } from '../../../libs/common/utils/errors/custom-errors';
 import { SUBSCRIPTION_ERROR_MESSAGES } from './constants/error-messages';
 import { Subscription, SubscriptionWithRepository } from './types/subscription';
 import { buildConfirmationUrl, buildUnsubscribeUrl } from './utils/build-url';
-import { SubscriptionEventProducerInterface } from './interfaces/subscription-event.producer';
+import {
+  SubscriptionEventProducerInterface,
+  SubscriptionRepositoryReleaseEventProducerInterface,
+} from './interfaces/subscription-event.producer';
 import { RepositoryServiceInterface } from '../../../apps/tracker/src/modules/repository';
+import { RepositoryReleaseDetectedEvent } from './schemas/repository-release.schema';
+
+type SubscriptionEventProducer = SubscriptionEventProducerInterface &
+  SubscriptionRepositoryReleaseEventProducerInterface;
 
 export class SubscriptionService implements SubscriptionServiceInterface {
   constructor(
     private readonly subscriptionRepository: SubscriptionRepositoryInterface,
-    private readonly eventProducer: SubscriptionEventProducerInterface,
+    private readonly eventProducer: SubscriptionEventProducer,
     private readonly repositoryService: RepositoryServiceInterface,
     private readonly subscriptionBaseUrl: string,
   ) {}
@@ -25,8 +32,8 @@ export class SubscriptionService implements SubscriptionServiceInterface {
     return this.subscriptionRepository.getSubscriptionsWithRepoByEmail(email);
   }
 
-  async getSubscriptionsByRepo(repositoryId: number): Promise<Subscription[]> {
-    return this.subscriptionRepository.getSubscriptionsByRepo(repositoryId);
+  async getSubscriptionsByRepo(repo: string): Promise<Subscription[]> {
+    return this.subscriptionRepository.getSubscriptionsByRepo(repo);
   }
 
   async subscribe(subscribeBody: SubscribeBody): Promise<void> {
@@ -74,5 +81,21 @@ export class SubscriptionService implements SubscriptionServiceInterface {
 
   async deleteUnconfirmed(expirationTimeInMs: number): Promise<number> {
     return this.subscriptionRepository.deleteUnconfirmed(expirationTimeInMs);
+  }
+
+  async processRepositoryRelease(release: RepositoryReleaseDetectedEvent): Promise<void> {
+    const subscriptions = await this.getSubscriptionsByRepo(release.repoName);
+    const eventPromises: Promise<void>[] = [];
+    for (const sub of subscriptions) {
+      eventPromises.push(
+        this.eventProducer.produceSubscriptionRepositoryRelease(
+          sub.email,
+          release,
+          buildUnsubscribeUrl(this.subscriptionBaseUrl, sub.token),
+        ),
+      );
+    }
+    // Will be modified with adding outbox
+    await Promise.all(eventPromises);
   }
 }

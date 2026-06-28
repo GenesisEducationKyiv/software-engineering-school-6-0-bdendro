@@ -1,4 +1,4 @@
-import { Repository } from '../../../../apps/tracker/src/modules/repository';
+import { SubscriptionRepository } from '../../repository';
 
 export interface Subscription {
   id: number;
@@ -10,5 +10,5 @@ export interface Subscription {
 }
 
 export type SubscriptionWithRepository = Subscription & {
-  repository: Repository;
+  repository: SubscriptionRepository;
 };

@@ -26,6 +26,7 @@ import { SUBSCRIPTION_DLQ, SUBSCRIPTION_DLX } from './common/constants/messaging
 import { createPrismaClient, PrismaDBClient } from './infrastructure/database/prisma';
 import { SubscriptionRepositoryPrismaMapper } from './modules/repository/mappers/repository-prisma.mapper';
 import { SubscriptionRepositoryPrismaRepository } from './modules/repository/repository-prisma.repository';
+import { ReleaseDetectedRabbitMqEventConsumer } from './modules/subscription/release-detected-rabbitmq.consumer';
 
 export type ContainerOverrides = Partial<{
   logger: AppLogger;
@@ -86,8 +87,19 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   //   subscriptionControllerMapper,
   // );
 
+  const releaseDetectedEventConsumer = new ReleaseDetectedRabbitMqEventConsumer(
+    rabbitMqConnection,
+    subscriptionService,
+    dlxProducer,
+    logger,
+  );
+
   // Consumer Manager
-  const consumerManager = new ConsumerManager(repositoryRabbitMqEventConsumer, logger);
+  const consumerManager = new ConsumerManager(
+    repositoryRabbitMqEventConsumer,
+    logger,
+    releaseDetectedEventConsumer,
+  );
 
   // Jobs
   // const unconfirmedSubscriptionsCleanupJob = new UnconfirmedSubscriptionsCleanupJob(
