@@ -16,7 +16,7 @@ import {
   RabbitMqConnection,
 } from '../libs/infrastructure/message-broker/rabbitmq.connection';
 import { RabbitMqProducer } from '../libs/infrastructure/message-broker/rabbitmq.producer';
-import { MAIN_EXCHANGE } from '../libs/contracts/main/messaging/exchanges';
+import { MAIN_EXCHANGE } from '../libs/contracts/main/messaging/topology';
 import { SubscriptionEventProducer } from './modules/subscription/subscription-event.producer';
 import { SubscriptionProducerMapper } from './modules/subscription/mappers/subscription-producer.mapper';
 import { ConsumerManager } from './consumer-manager';
@@ -97,8 +97,8 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   // Consumer Manager
   const consumerManager = new ConsumerManager(
     repositoryRabbitMqEventConsumer,
-    logger,
     releaseDetectedEventConsumer,
+    logger,
   );
 
   // Jobs

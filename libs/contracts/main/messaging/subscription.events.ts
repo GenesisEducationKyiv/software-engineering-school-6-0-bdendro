@@ -1,4 +1,11 @@
-import { RepositoryReleaseDetectedEvent } from '../../tracker/messaging/release.events';
+export interface RepositoryRelease {
+  id: number;
+  repoName: string;
+  tagName: string;
+  name: string | null;
+  htmlUrl: string;
+  publishedAt: string | null;
+}
 
 export interface SubscriptionCreatedEvent {
   email: string;
@@ -19,6 +26,6 @@ export interface SubscriptionUnsubscribedEvent {
 
 export interface SubscriptionRepositoryReleasedEvent {
   email: string;
-  release: RepositoryReleaseDetectedEvent;
+  release: RepositoryRelease;
   unsubscribeUrl: string;
 }

@@ -2,7 +2,7 @@ import { ChannelWrapper } from 'amqp-connection-manager';
 import { ConfirmChannel, ConsumeMessage } from 'amqplib';
 import type { ZodType } from 'zod';
 import { RabbitMqConnection } from '../../../../libs/infrastructure/message-broker/rabbitmq.connection';
-import { MAIN_EXCHANGE } from '../../../../libs/contracts/main/messaging/exchanges';
+import { MAIN_EXCHANGE } from '../../../../libs/contracts/main/messaging/topology';
 import {
   NOTIFICATION_DLQ,
   NOTIFICATION_DLX,

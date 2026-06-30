@@ -5,4 +5,5 @@ export interface RepositoryServiceInterface {
   getAll(): Promise<Repository[]>;
   track(repo: string): Promise<Repository>;
   updateTag(id: number, lastSeenTag: string): Promise<Repository>;
+  untrack(id: number): Promise<void>;
 }

@@ -3,7 +3,7 @@ import { MessageConsumerInterface } from '../../../libs/infrastructure/message-b
 import { RabbitMqConnection } from '../../../libs/infrastructure/message-broker/rabbitmq.connection';
 import { AppLogger } from '../../../libs/infrastructure/logger/interfaces/logger.interface';
 import type { ConfirmChannel, ConsumeMessage } from 'amqplib';
-import { TRACKER_EXCHANGE } from '../../../libs/contracts/tracker/messaging/exchanges';
+import { TRACKER_EXCHANGE } from '../../../libs/contracts/tracker/messaging/topology';
 import { RabbitMqDlxProducer } from '../../../libs/infrastructure/message-broker/rabbitmq-dlx.producer';
 import {
   RETRY_TIME_IN_MS,

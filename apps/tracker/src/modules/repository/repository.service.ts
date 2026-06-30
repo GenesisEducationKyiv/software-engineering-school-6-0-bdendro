@@ -1,3 +1,4 @@
+import { NotFoundError } from '../../../../../libs/common/utils/errors/custom-errors';
 import { GithubServiceInterface } from '../github';
 import { RepositoryRepositoryInterface } from './interfaces/repository.repository.interface';
 import { RepositoryServiceInterface } from './interfaces/repository.service.interface';
@@ -42,5 +43,15 @@ export class RepositoryService implements RepositoryServiceInterface {
     const repository = await this.repositoryRepository.updateTag(id, lastSeenTag);
     await this.eventProducer.produceRepositoryUpdated(repository);
     return repository;
+  }
+
+  async untrack(id: number): Promise<void> {
+    try {
+      await this.repositoryRepository.delete(id);
+    } catch (err) {
+      if (err instanceof NotFoundError) return;
+
+      throw err;
+    }
   }
 }

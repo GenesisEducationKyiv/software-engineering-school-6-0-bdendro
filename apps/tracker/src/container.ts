@@ -1,4 +1,4 @@
-import { TRACKER_EXCHANGE } from '../../../libs/contracts/tracker/messaging/exchanges';
+import { TRACKER_EXCHANGE } from '../../../libs/contracts/tracker/messaging/topology';
 import { AppLogger } from '../../../libs/infrastructure/logger/interfaces/logger.interface';
 import { PinoLogger } from '../../../libs/infrastructure/logger/pino-logger';
 import {

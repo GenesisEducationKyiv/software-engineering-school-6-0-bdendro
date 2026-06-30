@@ -3,7 +3,7 @@ import { MessageConsumerInterface } from '../../../libs/infrastructure/message-b
 import { RabbitMqConnection } from '../../../libs/infrastructure/message-broker/rabbitmq.connection';
 import { AppLogger } from '../../../libs/infrastructure/logger/interfaces/logger.interface';
 import type { ConfirmChannel, ConsumeMessage } from 'amqplib';
-import { TRACKER_EXCHANGE } from '../../../libs/contracts/tracker/messaging/exchanges';
+import { TRACKER_EXCHANGE } from '../../../libs/contracts/tracker/messaging/topology';
 import { RabbitMqDlxProducer } from '../../../libs/infrastructure/message-broker/rabbitmq-dlx.producer';
 import { REPOSITORY_RELEASE_EVENT_ROUTING_KEYS } from '../../../libs/contracts/tracker/messaging/routing-keys';
 import { ZodType } from 'zod';
@@ -13,7 +13,7 @@ import { mapValidationErrorDetailsToString } from '../../../libs/common/utils/va
 import {
   RETRY_TIME_IN_MS,
   SUBSCRIPTION_RELEASE_QUEUE,
-  SUBSCRIPTION_RELEASE_RETRY_EXCHANGE,
+  SUBSCRIPTION_RETRY_EXCHANGE,
   SUBSCRIPTION_RELEASE_RETRY_QUEUE,
 } from './constants/messaging.const';
 import { repositoryReleaseDetectedEventSchema } from './schemas/repository-release.schema';
@@ -58,13 +58,13 @@ export class ReleaseDetectedRabbitMqEventConsumer implements MessageConsumerInte
   private async setupChannel(channel: ConfirmChannel) {
     await Promise.all([
       channel.assertExchange(TRACKER_EXCHANGE, 'topic', { durable: true }),
-      channel.assertExchange(SUBSCRIPTION_RELEASE_RETRY_EXCHANGE, 'topic', {
+      channel.assertExchange(SUBSCRIPTION_RETRY_EXCHANGE, 'topic', {
         durable: true,
       }),
 
       channel.assertQueue(SUBSCRIPTION_RELEASE_QUEUE, {
         durable: true,
-        deadLetterExchange: SUBSCRIPTION_RELEASE_RETRY_EXCHANGE,
+        deadLetterExchange: SUBSCRIPTION_RETRY_EXCHANGE,
       }),
       channel.assertQueue(SUBSCRIPTION_RELEASE_RETRY_QUEUE, {
         durable: true,
@@ -80,11 +80,7 @@ export class ReleaseDetectedRabbitMqEventConsumer implements MessageConsumerInte
       TRACKER_EXCHANGE,
       REPOSITORY_RELEASE_EVENT_ROUTING_KEYS.DETECTED,
     );
-    await channel.bindQueue(
-      SUBSCRIPTION_RELEASE_RETRY_QUEUE,
-      SUBSCRIPTION_RELEASE_RETRY_EXCHANGE,
-      '#',
-    );
+    await channel.bindQueue(SUBSCRIPTION_RELEASE_RETRY_QUEUE, SUBSCRIPTION_RETRY_EXCHANGE, '#');
   }
 
   private async startConsumer(channel: ConfirmChannel) {
