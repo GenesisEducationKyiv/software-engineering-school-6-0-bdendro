@@ -34,6 +34,20 @@ model SubscriptionRepository {
   @@map("subscription_repositories")
 }
 
+model SubscribeSaga {
+  id             String   @id @default(uuid())
+  email          String
+  repoName       String   @map("repo_name")
+  subscriptionId Int?     @map("subscription_id")
+  repoId         Int?     @map("repo_id")
+  state          String   @default("STARTED")
+  errorMessage   String?  @map("error_message")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("subscribe_sagas")
+}
+
 // Tracker DB
 model Repository {
   id          Int      @id @default(autoincrement())
