@@ -8,7 +8,6 @@ import { RabbitMqDlxProducer } from '../../../libs/infrastructure/message-broker
 import {
   RETRY_TIME_IN_MS,
   SUBSCRIPTION_REPOSITORY_QUEUE,
-  SUBSCRIPTION_REPOSITORY_RETRY_EXCHANGE,
   SUBSCRIPTION_REPOSITORY_RETRY_QUEUE,
 } from './constants/messaging.const';
 import { REPOSITORY_EVENT_ROUTING_KEYS } from '../../../libs/contracts/tracker/messaging/routing-keys';
@@ -18,6 +17,7 @@ import { ValidationError } from '../../../libs/common/utils/errors/custom-errors
 import { mapValidationErrorDetailsToString } from '../../../libs/common/utils/validation/map-validation-error-details';
 import { repositoryUpdatedEventSchema } from './schemas/repository.schema';
 import { RepositoryRepositoryWritableInterface } from './interfaces/repository.repository.interface';
+import { SUBSCRIPTION_RETRY_EXCHANGE } from '../../common/constants/messaging.const';
 
 export class SubscriptionRepositoryRabbitMqEventConsumer implements MessageConsumerInterface {
   private readonly channelWrapper: ChannelWrapper;
@@ -58,13 +58,13 @@ export class SubscriptionRepositoryRabbitMqEventConsumer implements MessageConsu
   private async setupChannel(channel: ConfirmChannel) {
     await Promise.all([
       channel.assertExchange(TRACKER_EXCHANGE, 'topic', { durable: true }),
-      channel.assertExchange(SUBSCRIPTION_REPOSITORY_RETRY_EXCHANGE, 'topic', {
+      channel.assertExchange(SUBSCRIPTION_RETRY_EXCHANGE, 'topic', {
         durable: true,
       }),
 
       channel.assertQueue(SUBSCRIPTION_REPOSITORY_QUEUE, {
         durable: true,
-        deadLetterExchange: SUBSCRIPTION_REPOSITORY_RETRY_EXCHANGE,
+        deadLetterExchange: SUBSCRIPTION_RETRY_EXCHANGE,
       }),
       channel.assertQueue(SUBSCRIPTION_REPOSITORY_RETRY_QUEUE, {
         durable: true,
@@ -82,8 +82,8 @@ export class SubscriptionRepositoryRabbitMqEventConsumer implements MessageConsu
     );
     await channel.bindQueue(
       SUBSCRIPTION_REPOSITORY_RETRY_QUEUE,
-      SUBSCRIPTION_REPOSITORY_RETRY_EXCHANGE,
-      '#',
+      SUBSCRIPTION_RETRY_EXCHANGE,
+      REPOSITORY_EVENT_ROUTING_KEYS.UPDATED,
     );
   }
 

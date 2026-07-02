@@ -1,6 +1,7 @@
 import { AppLogger } from '../libs/infrastructure/logger/interfaces/logger.interface';
 import { SubscriptionRepositoryRabbitMqEventConsumer } from './modules/repository/subscription-repository-rabbitmq.consumer';
 import { ReleaseDetectedRabbitMqEventConsumer } from './modules/subscription/release-detected-rabbitmq.consumer';
+import { SubscribeSagaReplyConsumer } from './modules/subscription/saga/subscribe-saga-reply.consumer';
 
 export class ConsumerManager {
   private isRunning: boolean = false;
@@ -8,6 +9,7 @@ export class ConsumerManager {
   constructor(
     private readonly repositoryRabbitMqEventConsumer: SubscriptionRepositoryRabbitMqEventConsumer,
     private readonly releaseDetectedRabbitMqEventConsumer: ReleaseDetectedRabbitMqEventConsumer,
+    private readonly subscribeSagaReplyConsumer: SubscribeSagaReplyConsumer,
     private readonly logger: AppLogger,
   ) {}
 
@@ -23,6 +25,9 @@ export class ConsumerManager {
     await this.releaseDetectedRabbitMqEventConsumer.start();
     this.logger.info('Release detected consumer successfully started.');
 
+    await this.subscribeSagaReplyConsumer.start();
+    this.logger.info('Subscribe saga consumer successfully started.');
+
     this.isRunning = true;
   }
 
@@ -37,6 +42,9 @@ export class ConsumerManager {
 
     await this.releaseDetectedRabbitMqEventConsumer.stop();
     this.logger.info('Release detected consumer successfully stopped.');
+
+    await this.subscribeSagaReplyConsumer.start();
+    this.logger.info('Subscribe saga consumer successfully started.');
 
     this.isRunning = false;
   }

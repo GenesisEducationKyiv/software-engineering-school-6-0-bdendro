@@ -8,3 +8,7 @@ export interface RepositoryRepositoryWritableInterface {
   ): Promise<SubscriptionRepository>;
   deleteById(id: number): Promise<SubscriptionRepository>;
 }
+
+export interface RepositoryRepositoryReadableInterface {
+  getByRepoName(repoName: string): Promise<SubscriptionRepository | null>;
+}

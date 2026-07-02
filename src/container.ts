@@ -27,6 +27,10 @@ import { createPrismaClient, PrismaDBClient } from './infrastructure/database/pr
 import { SubscriptionRepositoryPrismaMapper } from './modules/repository/mappers/repository-prisma.mapper';
 import { SubscriptionRepositoryPrismaRepository } from './modules/repository/repository-prisma.repository';
 import { ReleaseDetectedRabbitMqEventConsumer } from './modules/subscription/release-detected-rabbitmq.consumer';
+import { SubscribeSagaPrismaRepository } from './modules/subscription/saga/subscribe-saga-prisma.repository';
+import { SubscribeSagaPrismaMapper } from './modules/subscription/saga/mappers/subscribe-saga-prisma.mapper';
+import { SubscribeSagaCommandProducer } from './modules/subscription/saga/subscribe-saga-command.producer';
+import { SubscribeSagaReplyConsumer } from './modules/subscription/saga/subscribe-saga-reply.consumer';
 
 export type ContainerOverrides = Partial<{
   logger: AppLogger;
@@ -71,21 +75,38 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
     subscriptionProducerMapper,
   );
 
+  const subscribeSagaRepositoryMapper = new SubscribeSagaPrismaMapper();
+  const subscribeSagaRepository = new SubscribeSagaPrismaRepository(
+    prisma,
+    subscribeSagaRepositoryMapper,
+  );
+  const subscribeSagaCommandProducer = new SubscribeSagaCommandProducer(rabbitMqConnection);
+
   const subscriptionRepositoryMapper = new SubscriptionPrismaMapper();
   const subscriptionRepository = new SubscriptionRepository(prisma, subscriptionRepositoryMapper);
-  const subscriptionService = null;
-  // new SubscriptionService(
-  // subscriptionRepository,
-  // subscriptionEventProducer,
-  // repositoryService,
-  // env.APP_BASE_URL,
-  // );
+  const subscriptionService = new SubscriptionService(
+    subscriptionRepository,
+    repositoryPrismaRepository,
+    subscriptionEventProducer,
+    subscribeSagaRepository,
+    subscribeSagaCommandProducer,
+    env.APP_BASE_URL,
+  );
   const subscriptionControllerMapper = new SubscriptionControllerMapper();
-  const subscriptionController = null;
-  // new SubscriptionController(
-  //   subscriptionService,
-  //   subscriptionControllerMapper,
-  // );
+  const subscriptionController = new SubscriptionController(
+    subscriptionService,
+    subscriptionControllerMapper,
+  );
+
+  const subscribeSagaReplyConsumer = new SubscribeSagaReplyConsumer(
+    rabbitMqConnection,
+    subscribeSagaRepository,
+    subscribeSagaCommandProducer,
+    subscriptionService,
+    repositoryPrismaRepository,
+    dlxProducer,
+    logger,
+  );
 
   const releaseDetectedEventConsumer = new ReleaseDetectedRabbitMqEventConsumer(
     rabbitMqConnection,
@@ -98,18 +119,19 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   const consumerManager = new ConsumerManager(
     repositoryRabbitMqEventConsumer,
     releaseDetectedEventConsumer,
+    subscribeSagaReplyConsumer,
     logger,
   );
 
   // Jobs
-  // const unconfirmedSubscriptionsCleanupJob = new UnconfirmedSubscriptionsCleanupJob(
-  //   logger,
-  //   subscriptionService,
-  //   ms(env.UNCONFIRMED_EXPIRATION_TIME as ms.StringValue),
-  // );
+  const unconfirmedSubscriptionsCleanupJob = new UnconfirmedSubscriptionsCleanupJob(
+    logger,
+    subscriptionService,
+    ms(env.UNCONFIRMED_EXPIRATION_TIME as ms.StringValue),
+  );
 
   const jobsManager = { startJobs: () => {}, stopJobs: async () => {} };
-  // new JobsManager(unconfirmedSubscriptionsCleanupJob, logger, env);
+  new JobsManager(unconfirmedSubscriptionsCleanupJob, logger, env);
 
   // Metrics
   const metricsController = new MetricsController();
@@ -121,7 +143,9 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
     consumerManager,
     jobsManager,
     producers: {
-      subscription: { subscriptionBaseMessageProducer, subscriptionEventProducer },
+      base: { subscriptionBaseMessageProducer },
+      subscription: { subscriptionEventProducer, subscribeSagaCommandProducer },
+      dlxProducer,
     },
     controllers: { subscriptionController, metricsController },
     services: { subscriptionService },

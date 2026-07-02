@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "subscribe_sagas" (
-    "id" TEXT NOT NULL,
+    "id" SERIAL NOT NULL,
     "email" TEXT NOT NULL,
     "repo_name" TEXT NOT NULL,
     "subscription_id" INTEGER,

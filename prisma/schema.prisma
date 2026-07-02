@@ -35,7 +35,7 @@ model SubscriptionRepository {
 }
 
 model SubscribeSaga {
-  id             String   @id @default(uuid())
+  id             Int      @id @default(autoincrement())
   email          String
   repoName       String   @map("repo_name")
   subscriptionId Int?     @map("subscription_id")

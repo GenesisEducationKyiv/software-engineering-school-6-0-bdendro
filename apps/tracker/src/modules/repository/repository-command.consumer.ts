@@ -96,7 +96,17 @@ export class RepositoryCommandConsumer implements MessageConsumerInterface {
         TRACKER_COMMAND_EXCHANGE,
         REPOSITORY_COMMANDS_ROUTING_KEYS.UNTRACK,
       ),
-      channel.bindQueue(TRACKER_REPOSITORY_COMMAND_RETRY_QUEUE, TRACKER_RETRY_EXCHANGE, '#'),
+
+      channel.bindQueue(
+        TRACKER_REPOSITORY_COMMAND_RETRY_QUEUE,
+        TRACKER_RETRY_EXCHANGE,
+        REPOSITORY_COMMANDS_ROUTING_KEYS.TRACK,
+      ),
+      channel.bindQueue(
+        TRACKER_REPOSITORY_COMMAND_RETRY_QUEUE,
+        TRACKER_RETRY_EXCHANGE,
+        REPOSITORY_COMMANDS_ROUTING_KEYS.UNTRACK,
+      ),
     ]);
   }
 
@@ -137,7 +147,7 @@ export class RepositoryCommandConsumer implements MessageConsumerInterface {
       this.handleMessage(msg, channel).catch((err: unknown) => {
         this.logger.error(
           { err, queue: TRACKER_REPOSITORY_COMMAND_QUEUE },
-          'Unchecked error while processing repository event.',
+          'Unchecked error while processing repository command.',
         );
       });
     });

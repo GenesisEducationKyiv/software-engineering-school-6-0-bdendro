@@ -6,12 +6,12 @@ import {
 } from '../../../../libs/common/types/validated-request';
 import { SubscribeBody, SubscriptionsQuery, TokenParams } from '../schemas/subscription.schema';
 import { MessageResponse } from '../../../../libs/common/types/response';
-import { SubscriptionResponse } from '../dto/subscription.response.dto';
+import { SubscribeResponse, SubscriptionResponse } from '../dto/subscription.response.dto';
 
 export interface SubscriptionControllerInterface {
   subscribe(
     req: RequestWithValidatedBody<SubscribeBody>,
-    res: Response<MessageResponse>,
+    res: Response<SubscribeResponse>,
   ): Promise<void>;
 
   confirm(

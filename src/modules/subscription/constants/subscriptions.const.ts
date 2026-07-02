@@ -9,3 +9,11 @@ export const SUBSCRIPTION_ROUTE_PATHS = {
   // params names
   TOKEN: 'token',
 } as const;
+
+export const SUBSCRIBE_STATUSES = {
+  PENDING: 'PENDING',
+  SUCCESS: 'SUCCESS',
+  FAILED: 'FAILED',
+} as const;
+
+export type SubscribeStatuses = typeof SUBSCRIBE_STATUSES;

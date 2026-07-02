@@ -3,6 +3,7 @@ import {
   numericIdSchema,
   repoSchema,
 } from '../../../../libs/common/utils/validation/common.schema';
+
 // --- Commands ---
 // Properties
 export const repositoryCommandPropertiesSchema = z.strictObject({
@@ -30,8 +31,11 @@ export type UntrackRepositoryCommand = z.infer<typeof untrackRepositoryCommandSc
 // Track
 export const TRACKER_REPOSITORY_REPLY_TYPES = {
   TRACK_SUCCESS: 'TRACK_REPOSITORY_SUCCESS',
-  TRACK_FAILED: 'TRACK_REPOSITORY_SUCCESS',
+  TRACK_FAILED: 'TRACK_REPOSITORY_FAILED',
 } as const;
+
+export type TrackerRepositoryReplyType =
+  (typeof TRACKER_REPOSITORY_REPLY_TYPES)[keyof typeof TRACKER_REPOSITORY_REPLY_TYPES];
 
 export interface Repository {
   id: number;

@@ -1,6 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { SubscriptionRepositoryInterface } from './interfaces/subscription.repository.interface';
-import { SubscriptionServiceInterface } from './interfaces/subscription.service.interface';
+import {
+  SubscribeResult,
+  SubscriptionServiceInterface,
+} from './interfaces/subscription.service.interface';
 import { SubscribeBody } from './schemas/subscription.schema';
 import { NotFoundError } from '../../../libs/common/utils/errors/custom-errors';
 import { SUBSCRIPTION_ERROR_MESSAGES } from './constants/error-messages';
@@ -10,8 +13,11 @@ import {
   SubscriptionEventProducerInterface,
   SubscriptionRepositoryReleaseEventProducerInterface,
 } from './interfaces/subscription-event.producer';
-import { RepositoryServiceInterface } from '../../../apps/tracker/src/modules/repository';
 import { RepositoryReleaseDetectedEvent } from './schemas/repository-release.schema';
+import { RepositoryRepositoryReadableInterface } from '../repository';
+import { SUBSCRIBE_STATUSES } from './constants/subscriptions.const';
+import { SubscribeSagaRepository } from './saga/interfaces/subscribe-saga.repository.interface';
+import { SubscribeSagaCommandProducer } from './saga/subscribe-saga-command.producer';
 
 type SubscriptionEventProducer = SubscriptionEventProducerInterface &
   SubscriptionRepositoryReleaseEventProducerInterface;
@@ -19,8 +25,10 @@ type SubscriptionEventProducer = SubscriptionEventProducerInterface &
 export class SubscriptionService implements SubscriptionServiceInterface {
   constructor(
     private readonly subscriptionRepository: SubscriptionRepositoryInterface,
+    private readonly subscriptionRepositoryRepository: RepositoryRepositoryReadableInterface,
     private readonly eventProducer: SubscriptionEventProducer,
-    private readonly repositoryService: RepositoryServiceInterface,
+    private readonly subscribeSagaRepository: SubscribeSagaRepository,
+    private readonly subscribeSagaCommandProducer: SubscribeSagaCommandProducer,
     private readonly subscriptionBaseUrl: string,
   ) {}
 
@@ -36,22 +44,43 @@ export class SubscriptionService implements SubscriptionServiceInterface {
     return this.subscriptionRepository.getSubscriptionsByRepo(repo);
   }
 
-  async subscribe(subscribeBody: SubscribeBody): Promise<void> {
-    const repository = await this.repositoryService.track(subscribeBody.repo);
-
+  async createSubscription(email: string, repoId: number, repoName: string): Promise<Subscription> {
     const token = randomUUID();
-    await this.subscriptionRepository.create({
-      email: subscribeBody.email,
+
+    const subscription = await this.subscriptionRepository.create({
+      email,
+      repositoryId: repoId,
       token,
-      repositoryId: repository.id,
     });
 
-    const confirmationUrl = buildConfirmationUrl(this.subscriptionBaseUrl, token);
+    const confirmationUrl = buildConfirmationUrl(this.subscriptionBaseUrl, subscription.token);
     await this.eventProducer.produceSubscriptionCreated(
-      subscribeBody.email,
+      subscription.email,
       confirmationUrl,
-      repository.repo,
+      repoName,
     );
+
+    return subscription;
+  }
+
+  async subscribe(subscribeBody: SubscribeBody): Promise<SubscribeResult> {
+    const repository = await this.subscriptionRepositoryRepository.getByRepoName(
+      subscribeBody.repo,
+    );
+    if (repository) {
+      await this.createSubscription(subscribeBody.email, repository.id, repository.repo);
+      return { status: SUBSCRIBE_STATUSES.SUCCESS };
+    }
+
+    const saga = await this.subscribeSagaRepository.create({
+      email: subscribeBody.email,
+      repoName: subscribeBody.repo,
+    });
+
+    await this.subscribeSagaCommandProducer.produceTrackRepo(subscribeBody.repo, {
+      correlationId: saga.id,
+    });
+    return { status: SUBSCRIBE_STATUSES.PENDING, operationId: saga.id };
   }
 
   async confirm(token: string): Promise<void> {

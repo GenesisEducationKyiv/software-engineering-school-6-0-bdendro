@@ -8,8 +8,9 @@ import {
 import { SubscribeBody, SubscriptionsQuery, TokenParams } from './schemas/subscription.schema';
 import { SubscriptionServiceInterface } from './interfaces/subscription.service.interface';
 import { MessageResponse } from '../../../libs/common/types/response';
-import { SubscriptionResponse } from './dto/subscription.response.dto';
+import { SubscribeResponse, SubscriptionResponse } from './dto/subscription.response.dto';
 import { SubscriptionControllerMapper } from './mappers/subscription-controller.mapper';
+import { SUBSCRIBE_STATUSES } from './constants/subscriptions.const';
 
 export class SubscriptionController implements SubscriptionControllerInterface {
   constructor(
@@ -19,10 +20,17 @@ export class SubscriptionController implements SubscriptionControllerInterface {
 
   async subscribe(
     req: RequestWithValidatedBody<SubscribeBody>,
-    res: Response<MessageResponse>,
+    res: Response<SubscribeResponse>,
   ): Promise<void> {
-    await this.subscriptionService.subscribe(req.validated.body);
-    res.status(200).json({ message: 'Subscription successful. Confirmation email sent.' });
+    const result = await this.subscriptionService.subscribe(req.validated.body);
+    if (result.status === SUBSCRIBE_STATUSES.PENDING) {
+      res.status(202).json({
+        message: 'Processing subscription. Use operationId to check the status.',
+        operationId: result.operationId,
+      });
+      return;
+    }
+    res.status(201).json({ message: 'Subscription successful. Confirmation email sent.' });
   }
 
   async confirm(

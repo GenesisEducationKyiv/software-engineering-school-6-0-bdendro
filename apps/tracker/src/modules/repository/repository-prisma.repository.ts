@@ -3,16 +3,17 @@ import {
   NotFoundError,
 } from '../../../../../libs/common/utils/errors/custom-errors';
 import { PRISMA_ERROR_CODES } from '../../../../../libs/infrastructure/database/prisma/constants/prisma.const';
-import { Prisma, PrismaClient } from '../../../../../libs/database/generated/prisma/client';
+import { Prisma } from '../../../../../libs/database/generated/prisma/client';
 import { REPOSITORY_ERROR_MESSAGES } from './constants/error-messages';
 import { RepositoryRepositoryInterface } from './interfaces/repository.repository.interface';
 import { RepositoryPrismaMapper } from './mappers/repository-prisma.mapper';
 import { Repository } from './types/repository';
 import { RepositoryCreateInput } from './types/repository-repository';
+import { PrismaDBClient } from '../../infrastructure/database/prisma';
 
 export class RepositoryPrismaRepository implements RepositoryRepositoryInterface {
   constructor(
-    private readonly prisma: PrismaClient,
+    private readonly prisma: PrismaDBClient,
     private readonly mapper: RepositoryPrismaMapper,
   ) {}
 

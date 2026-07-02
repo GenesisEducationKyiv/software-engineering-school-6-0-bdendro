@@ -13,11 +13,11 @@ import { mapValidationErrorDetailsToString } from '../../../libs/common/utils/va
 import {
   RETRY_TIME_IN_MS,
   SUBSCRIPTION_RELEASE_QUEUE,
-  SUBSCRIPTION_RETRY_EXCHANGE,
   SUBSCRIPTION_RELEASE_RETRY_QUEUE,
 } from './constants/messaging.const';
 import { repositoryReleaseDetectedEventSchema } from './schemas/repository-release.schema';
 import { SubscriptionServiceInterface } from './interfaces/subscription.service.interface';
+import { SUBSCRIPTION_RETRY_EXCHANGE } from '../../common/constants/messaging.const';
 
 export class ReleaseDetectedRabbitMqEventConsumer implements MessageConsumerInterface {
   private readonly channelWrapper: ChannelWrapper;
@@ -80,7 +80,11 @@ export class ReleaseDetectedRabbitMqEventConsumer implements MessageConsumerInte
       TRACKER_EXCHANGE,
       REPOSITORY_RELEASE_EVENT_ROUTING_KEYS.DETECTED,
     );
-    await channel.bindQueue(SUBSCRIPTION_RELEASE_RETRY_QUEUE, SUBSCRIPTION_RETRY_EXCHANGE, '#');
+    await channel.bindQueue(
+      SUBSCRIPTION_RELEASE_RETRY_QUEUE,
+      SUBSCRIPTION_RETRY_EXCHANGE,
+      REPOSITORY_RELEASE_EVENT_ROUTING_KEYS.DETECTED,
+    );
   }
 
   private async startConsumer(channel: ConfirmChannel) {
@@ -114,7 +118,7 @@ export class ReleaseDetectedRabbitMqEventConsumer implements MessageConsumerInte
       this.handleMessage(msg, channel).catch((err: unknown) => {
         this.logger.error(
           { err, queue: SUBSCRIPTION_RELEASE_QUEUE },
-          'Unchecked error while processing repository event.',
+          'Unchecked error while processing repository release event.',
         );
       });
     });

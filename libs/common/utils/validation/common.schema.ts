@@ -12,7 +12,8 @@ export const repoSchema = z
   .toLowerCase()
   .regex(/^[^/\s]+\/[^/\s]+$/, 'Repository must be in owner/repo format');
 
-export const nullableTrimmedStringSchema = z.string().trim().nullable();
+export const trimmedStringSchema = z.string().trim();
+export const nullableTrimmedStringSchema = trimmedStringSchema.nullable();
 
 export const isoDateTimeSchema = z.string().trim().pipe(z.iso.datetime());
 export const nullableIsoDateTimeSchema = isoDateTimeSchema.nullable();

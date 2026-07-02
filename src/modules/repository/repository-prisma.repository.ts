@@ -3,16 +3,27 @@ import { Prisma } from '../../../libs/database/generated/prisma/client';
 import { PRISMA_ERROR_CODES } from '../../../libs/infrastructure/database/prisma/constants/prisma.const';
 import { PrismaDBClient } from '../../infrastructure/database/prisma';
 import { REPOSITORY_ERROR_MESSAGES } from './constants/error-messages';
-import { RepositoryRepositoryWritableInterface } from './interfaces/repository.repository.interface';
+import {
+  RepositoryRepositoryReadableInterface,
+  RepositoryRepositoryWritableInterface,
+} from './interfaces/repository.repository.interface';
 import { SubscriptionRepositoryPrismaMapper } from './mappers/repository-prisma.mapper';
 import { SubscriptionRepository } from './types/repository';
 import { SubscriptionRepositoryCreateInput } from './types/repository-repository';
 
-export class SubscriptionRepositoryPrismaRepository implements RepositoryRepositoryWritableInterface {
+export class SubscriptionRepositoryPrismaRepository
+  implements RepositoryRepositoryWritableInterface, RepositoryRepositoryReadableInterface
+{
   constructor(
     private readonly prisma: PrismaDBClient,
     private readonly mapper: SubscriptionRepositoryPrismaMapper,
   ) {}
+
+  async getByRepoName(repoName: string): Promise<SubscriptionRepository | null> {
+    return this.mapper.toRepository(
+      await this.prisma.subscriptionRepository.findUnique({ where: { repoName } }),
+    );
+  }
 
   async createOrGet(
     repositoryInput: SubscriptionRepositoryCreateInput,

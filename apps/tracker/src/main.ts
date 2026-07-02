@@ -21,7 +21,7 @@ async function bootstrap() {
     logger.info(`Server is listening on port ${env.TRACKER_PORT}`);
   });
 
-  // await container.consumerManager.start();
+  await container.consumerManager.start();
 
   container.jobsManager.startJobs();
 
@@ -34,7 +34,7 @@ async function bootstrap() {
 
     await container.jobsManager.stopJobs();
 
-    // await container.consumerManager.stop();
+    await container.consumerManager.stop();
 
     await container.rabbitMqConnection.close();
     logger.info(`RabbitMQ connection successfully closed.`);
