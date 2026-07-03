@@ -10,6 +10,7 @@ RUN npm ci
 FROM deps AS build
 
 COPY tsconfig.json ./
+COPY buf.yaml buf.gen.yaml ./
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
 COPY apps/tracker ./apps/tracker

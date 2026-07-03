@@ -50,6 +50,12 @@ jobs:
       - name: Generate prisma client
         run: npm run prisma:generate
 
+      - name: Lint gRPC contracts
+        run: npm run proto:lint
+
+      - name: Generate gRPC contracts
+        run: npm run proto:generate
+
       - name: Check code formatting
         run: npm run format:diff
 
@@ -62,8 +68,14 @@ jobs:
       - name: Build main API
         run: npm run build
 
-      - name: Build modular monolith
+      - name: Build Notification service
         run: npm run build:notification
+
+      - name: Build Tracker service
+        run: npm run build:tracker
+
+      - name: Build GitHub service
+        run: npm run build:github
 
   unit-tests:
     name: Unit Tests
