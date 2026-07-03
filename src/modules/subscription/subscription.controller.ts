@@ -26,7 +26,7 @@ export class SubscriptionController implements SubscriptionControllerInterface {
     if (result.status === SUBSCRIBE_STATUSES.PENDING) {
       res.status(202).json({
         message: 'Processing subscription. Use operationId to check the status.',
-        operationId: result.operationId,
+        operationId: result.operationId.toString(),
       });
       return;
     }

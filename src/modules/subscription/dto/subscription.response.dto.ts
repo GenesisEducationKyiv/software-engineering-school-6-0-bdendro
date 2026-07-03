@@ -1,4 +1,4 @@
-import { MessageResponse } from '../../../../libs/common/types/response';
+import { MessageResponse, PendingResponse } from '../../../../libs/common/types/response';
 
 export interface SubscriptionResponse {
   email: string;
@@ -7,4 +7,4 @@ export interface SubscriptionResponse {
   last_seen_tag: string | null;
 }
 
-export type SubscribeResponse = MessageResponse | (MessageResponse & { operationId: number });
+export type SubscribeResponse = MessageResponse | PendingResponse;
