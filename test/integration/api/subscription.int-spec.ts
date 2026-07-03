@@ -12,8 +12,8 @@ import type { SubscriptionCreateInput } from '../../../libs/database/generated/p
 import type {
   GithubLatestReleaseApiResponse as GithubLatestReleaseApiFullResponse,
   GithubRepositoryApiResponse as GithubRepositoryApiFullResponse,
-} from '../../../apps/tracker/src/modules/github/dto/github-api.response.dto';
-import { GithubRateLimiterInterface } from '../../../apps/tracker/src/modules/github/utils/github-rate-limiter';
+} from '../../../apps/github/src/github/dto/github-api.response.dto';
+import { GithubRateLimiterInterface } from '../../../apps/github/src/github/utils/github-rate-limiter';
 import { RabbitMqConnection } from '../../../libs/infrastructure/message-broker/rabbitmq.connection';
 import { SUBSCRIPTION_EVENT_ROUTING_KEYS } from '../../../libs/contracts/main/messaging/routing-keys';
 

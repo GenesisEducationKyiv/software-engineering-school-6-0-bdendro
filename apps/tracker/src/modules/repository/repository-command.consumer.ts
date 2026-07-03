@@ -27,7 +27,7 @@ import {
   trackRepositoryCommandSchema,
   untrackRepositoryCommandSchema,
 } from '../../../../../libs/contracts/tracker/messaging/repository.commands';
-import { GITHUB_NAME } from '../github';
+import { GITHUB_ERROR_MESSAGES } from '../github';
 
 export class RepositoryCommandConsumer implements MessageConsumerInterface {
   private readonly channelWrapper: ChannelWrapper;
@@ -209,7 +209,7 @@ export class RepositoryCommandConsumer implements MessageConsumerInterface {
           repository,
         );
       } catch (err) {
-        if (err instanceof NotFoundError && err.message.includes(GITHUB_NAME)) {
+        if (err instanceof NotFoundError && err.message === GITHUB_ERROR_MESSAGES.REPO_NOT_FOUND) {
           await this.repositoryReplyProducer.sendTrackRepositoryFailedReply(
             replyTo,
             correlationId,

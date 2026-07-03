@@ -1,8 +1,5 @@
 import { NotFoundError } from '../../../libs/common/utils/errors/custom-errors';
-import type {
-  GithubServiceInterface,
-  GithubRelease,
-} from '../../../apps/tracker/src/modules/github/index';
+import type { GithubServiceInterface, GithubRelease } from '../../../apps/github/src/github/index';
 import { SubscriptionRepositoryInterface } from './interfaces/subscription.repository.interface';
 import { SubscriptionService } from './subscription.service';
 import { SubscribeBody } from './schemas/subscription.schema';

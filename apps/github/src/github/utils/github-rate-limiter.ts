@@ -1,7 +1,7 @@
 import {
   RateLimiter,
   RateLimiterInterface,
-} from '../../../../../../libs/infrastructure/rate-limiter/rate-limiter';
+} from '../../../../../libs/infrastructure/rate-limiter/rate-limiter';
 
 export interface GitHubRateLimitHeaders {
   'retry-after'?: string | number;

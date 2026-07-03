@@ -1,4 +1,3 @@
-import { NotFoundError } from '../../../../../libs/common/utils/errors/custom-errors';
 import { GithubService } from './github.service';
 import { GithubClientInterface } from './interfaces/github.client.interface';
 import { GithubRelease } from './types/github-release';
@@ -39,21 +38,23 @@ describe('GithubService', () => {
     jest.resetAllMocks();
   });
 
-  describe('ensureRepositoryExists', () => {
-    it('should not to throw error when repository exists', async () => {
+  describe('isRepoExists', () => {
+    it('should return true when repository exists', async () => {
       githubClient.getRepository.mockResolvedValue(githubRepo);
 
-      await githubService.ensureRepositoryExists(repo);
+      const result = await githubService.isRepoExists(repo);
 
       expect(githubClient.getRepository).toHaveBeenCalledWith(repo);
+      expect(result).toEqual(true);
     });
 
-    it('should throw error when repository does not exist', async () => {
+    it('should return false when repository does not exist', async () => {
       githubClient.getRepository.mockResolvedValue(null);
 
-      await expect(githubService.ensureRepositoryExists(repo)).rejects.toThrow(NotFoundError);
+      const result = await githubService.isRepoExists(repo);
 
       expect(githubClient.getRepository).toHaveBeenCalledWith(repo);
+      expect(result).toEqual(true);
     });
   });
 

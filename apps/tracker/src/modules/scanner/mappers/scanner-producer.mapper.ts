@@ -1,10 +1,10 @@
 import { RepositoryReleaseDetectedEvent } from '../../../../../../libs/contracts/tracker/messaging/release.events';
-import { GithubRelease } from '../../github';
+import { RepositoryRelease } from '../../github/types/repository-release';
 
 export class ScannerProducerMapper {
   constructor() {}
 
-  toRepositoryRelease(release: GithubRelease): RepositoryReleaseDetectedEvent {
+  toRepositoryRelease(release: RepositoryRelease): RepositoryReleaseDetectedEvent {
     return {
       id: release.id,
       repoName: release.repoName,

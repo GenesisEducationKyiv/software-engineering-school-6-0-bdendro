@@ -1,7 +1,6 @@
-import { GithubRelease } from '../types/github-release';
-import { GithubRepository } from '../types/github-repository';
+import { RepositoryRelease } from '../types/repository-release';
 
 export interface GithubClientInterface {
-  getRepository(repo: string): Promise<GithubRepository | null>;
-  getLatestRelease(repo: string): Promise<GithubRelease | null>;
+  isRepositoryExists(fullRepoName: string): Promise<boolean>;
+  getLatestRelease(fullRepoName: string): Promise<RepositoryRelease | null>;
 }
