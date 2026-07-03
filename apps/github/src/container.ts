@@ -4,6 +4,7 @@ import { Env } from './config/config';
 import { createLoggerConfig } from './config/logger.config';
 import { GithubClient } from './github/github.client';
 import { GithubController } from './github/github.controller';
+import { GithubGrpcHandler } from './github/github.grpc.handler';
 import { GithubService } from './github/github.service';
 import { GithubClientInterface } from './github/interfaces/github.client.interface';
 import { GithubClientMapper } from './github/mappers/github-client.mapper';
@@ -30,9 +31,12 @@ export function createContainer(env: Env, options?: ContainerOptions) {
   const githubService = new GithubService(githubClient);
   const githubController = new GithubController(githubService);
 
+  const githubGrpcHandler = new GithubGrpcHandler(githubService);
+
   return {
     logger,
     githubClient,
+    grpcHandlers: { githubGrpcHandler },
     controllers: { githubController },
     services: { githubService },
   };

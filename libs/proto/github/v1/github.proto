@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package github.v1;
+
+service GithubService {
+  rpc CheckRepositoryExists (CheckRepositoryExistsRequest) returns (CheckRepositoryExistsResponse);
+  rpc GetLatestRelease (GetLatestReleaseRequest) returns (GetLatestReleaseResponse);
+}
+
+message CheckRepositoryExistsRequest {
+  string owner = 1;
+  string repo = 2;
+}
+
+message CheckRepositoryExistsResponse {
+  bool exists = 1;
+}
+
+message GetLatestReleaseRequest {
+  string owner = 1;
+  string repo = 2;
+}
+
+message GetLatestReleaseResponse {
+  int32 id = 1; 
+  string repo_name = 2; 
+  string tag_name = 3;
+  optional string name = 4; 
+  string html_url = 5;
+  optional string published_at = 6;
+}

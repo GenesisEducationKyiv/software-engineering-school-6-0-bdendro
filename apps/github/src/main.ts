@@ -4,11 +4,13 @@ import { createApp } from './app';
 import { createContainer } from './container';
 import { createLoggerConfig } from './config/logger.config';
 import { env } from './config/config';
+import { GrpcAppServer } from './app.grpc';
+import { GithubServiceServer } from '../../../libs/contracts/grpc/github/v1/github';
 
 const GITHUB_SERVICE_NAME = 'GitHub Service';
 const logger = new PinoLogger({ ...createLoggerConfig(env, ''), appName: GITHUB_SERVICE_NAME });
 
-function bootstrap() {
+async function bootstrap() {
   const container = createContainer(env, {
     overrides: { logger },
     serviceName: GITHUB_SERVICE_NAME,
@@ -16,15 +18,25 @@ function bootstrap() {
 
   const app = createApp(container);
 
+  const grpcApp = new GrpcAppServer(
+    container.grpcHandlers.githubGrpcHandler as unknown as GithubServiceServer,
+    logger,
+  );
+
   const server = app.listen(env.GITHUB_PORT, () => {
     logger.info(`Server is listening on port ${env.GITHUB_PORT}`);
   });
+
+  const gprcAddress = `0.0.0.0:${env.GITHUB_GRPC_PORT}`;
+  await grpcApp.start(gprcAddress);
 
   async function shutdown() {
     logger.info('Shutting down...');
     const closeServer = promisify(server.close.bind(server));
     await closeServer();
     logger.info('HTTP server closed.');
+
+    await grpcApp.close();
 
     logger.info('Application shut down successfully.');
     process.exit(0);
@@ -44,9 +56,8 @@ function bootstrap() {
     });
   });
 }
-try {
-  bootstrap();
-} catch (err) {
+
+bootstrap().catch((err: unknown) => {
   logger.fatal({ err }, 'Failed to start application.');
   process.exit(1);
-}
+});

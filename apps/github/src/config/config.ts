@@ -9,6 +9,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum([ENV.DEVELOPMENT, ENV.TEST, ENV.PRODUCTION]).default(ENV.DEVELOPMENT),
 
   GITHUB_PORT: z.coerce.number().int().min(1).max(65535).default(3004),
+  GITHUB_GRPC_PORT: z.coerce.number().int().min(1).max(65535).default(50051),
 
   GITHUB_TOKEN: z.string().trim().min(1),
   GITHUB_API_URL: z.url({ protocol: /^https?$/ }),
