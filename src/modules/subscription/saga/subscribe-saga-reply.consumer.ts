@@ -83,7 +83,7 @@ export class SubscribeSagaReplyConsumer implements MessageConsumerInterface {
       channel.assertQueue(SUBSCRIBE_SAGA_REPLIES_QUEUE, {
         durable: true,
         deadLetterExchange: SUBSCRIPTION_RETRY_EXCHANGE,
-        deadLetterRoutingKey: SUBSCRIBE_SAGA_REPLIES_RETRY_QUEUE,
+        deadLetterRoutingKey: SUBSCRIBE_SAGA_REPLIES_QUEUE,
       }),
       channel.assertQueue(SUBSCRIBE_SAGA_REPLIES_RETRY_QUEUE, {
         durable: true,
@@ -225,6 +225,7 @@ export class SubscribeSagaReplyConsumer implements MessageConsumerInterface {
             });
 
             await this.sagaRepository.markCompensated(correlationId, true);
+            return; // ack
           } catch (err) {
             if (
               err instanceof ConflictError &&

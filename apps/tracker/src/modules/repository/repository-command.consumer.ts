@@ -218,7 +218,6 @@ export class RepositoryCommandConsumer implements MessageConsumerInterface {
               error_message: err.message,
             },
           );
-          channel.ack(msg);
           return;
         }
 
