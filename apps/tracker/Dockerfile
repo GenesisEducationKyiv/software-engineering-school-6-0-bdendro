@@ -15,6 +15,9 @@ COPY prisma.config.ts ./
 COPY apps/tracker ./apps/tracker
 COPY libs ./libs
 
+# Generate Prisma client
+RUN npm run prisma:generate
+
 RUN npm run build:tracker
 
 
