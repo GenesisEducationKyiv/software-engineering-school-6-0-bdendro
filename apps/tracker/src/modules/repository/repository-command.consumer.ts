@@ -1,8 +1,9 @@
 import { ChannelWrapper } from 'amqp-connection-manager';
+import { ConfirmChannel, ConsumeMessage } from 'amqplib';
+import { ZodType } from 'zod';
 import { MessageConsumerInterface } from '../../../../../libs/infrastructure/message-broker/interfaces/message.consumer.interface';
 import { RabbitMqConnection } from '../../../../../libs/infrastructure/message-broker/rabbitmq.connection';
 import { AppLogger } from '../../../../../libs/infrastructure/logger/interfaces/logger.interface';
-import { ConfirmChannel, ConsumeMessage } from 'amqplib';
 import { TRACKER_COMMAND_EXCHANGE } from '../../../../../libs/contracts/tracker/messaging/topology';
 import { TRACKER_RETRY_EXCHANGE } from '../../common/constants/messaging.const';
 import {
@@ -16,7 +17,6 @@ import {
   NotFoundError,
   ValidationError,
 } from '../../../../../libs/common/utils/errors/custom-errors';
-import { ZodType } from 'zod';
 import { RabbitMqDlxProducer } from '../../../../../libs/infrastructure/message-broker/rabbitmq-dlx.producer';
 import { mapValidationErrorDetailsToString } from '../../../../../libs/common/utils/validation/map-validation-error-details';
 import { RepositoryServiceInterface } from './interfaces/repository.service.interface';

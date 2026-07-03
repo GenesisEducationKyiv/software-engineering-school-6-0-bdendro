@@ -1,8 +1,8 @@
 import type { ChannelWrapper } from 'amqp-connection-manager';
+import type { ConfirmChannel, ConsumeMessage } from 'amqplib';
 import { MessageConsumerInterface } from '../../../libs/infrastructure/message-broker/interfaces/message.consumer.interface';
 import { RabbitMqConnection } from '../../../libs/infrastructure/message-broker/rabbitmq.connection';
 import { AppLogger } from '../../../libs/infrastructure/logger/interfaces/logger.interface';
-import type { ConfirmChannel, ConsumeMessage } from 'amqplib';
 import { TRACKER_EXCHANGE } from '../../../libs/contracts/tracker/messaging/topology';
 import { RabbitMqDlxProducer } from '../../../libs/infrastructure/message-broker/rabbitmq-dlx.producer';
 import {

@@ -147,6 +147,21 @@ npm run build:notification
 npm run start:prod:notification
 ```
 
+#### Tracker Service
+
+Start in development mode:
+
+```bash
+npm run start:tracker
+```
+
+Build and run in production mode:
+
+```bash
+npm run build:tracker
+npm run start:prod:tracker
+```
+
 ---
 
 ### 3. Run tests with Docker
@@ -159,11 +174,7 @@ cp .env.example .env.test
 
 Then **manually update** the required values in `.env.test`.
 
-Run tests in Docker:
-
-```bash
-docker compose --profile test run --rm test
-```
+To run tests in Docker see also [`testing.md`](./docs/testing.md)
 
 > **Note**
 > The repository contains `.env.example`, but does not include `.env.test.example`, so `.env.test` must be created manually.
@@ -190,13 +201,7 @@ Generate Prisma client:
 npm run prisma:generate
 ```
 
-Run tests:
-
-```bash
-npm run test
-```
-
-You can also run the unit test command directly:
+You can run the unit test command:
 
 ```bash
 npm run test:unit

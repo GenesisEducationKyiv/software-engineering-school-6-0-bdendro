@@ -1,12 +1,12 @@
 import type { ChannelWrapper } from 'amqp-connection-manager';
+import type { ConfirmChannel, ConsumeMessage } from 'amqplib';
+import { ZodType } from 'zod';
 import { MessageConsumerInterface } from '../../../libs/infrastructure/message-broker/interfaces/message.consumer.interface';
 import { RabbitMqConnection } from '../../../libs/infrastructure/message-broker/rabbitmq.connection';
 import { AppLogger } from '../../../libs/infrastructure/logger/interfaces/logger.interface';
-import type { ConfirmChannel, ConsumeMessage } from 'amqplib';
 import { TRACKER_EXCHANGE } from '../../../libs/contracts/tracker/messaging/topology';
 import { RabbitMqDlxProducer } from '../../../libs/infrastructure/message-broker/rabbitmq-dlx.producer';
 import { REPOSITORY_RELEASE_EVENT_ROUTING_KEYS } from '../../../libs/contracts/tracker/messaging/routing-keys';
-import { ZodType } from 'zod';
 import { validate } from '../../../libs/common/utils/validation/validate';
 import { ValidationError } from '../../../libs/common/utils/errors/custom-errors';
 import { mapValidationErrorDetailsToString } from '../../../libs/common/utils/validation/map-validation-error-details';

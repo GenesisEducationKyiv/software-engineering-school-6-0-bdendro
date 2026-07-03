@@ -1,9 +1,9 @@
 import { ChannelWrapper } from 'amqp-connection-manager';
+import { ConfirmChannel, ConsumeMessage } from 'amqplib';
 import { ZodType } from 'zod';
 import { MessageConsumerInterface } from '../../../../libs/infrastructure/message-broker/interfaces/message.consumer.interface';
 import { RabbitMqConnection } from '../../../../libs/infrastructure/message-broker/rabbitmq.connection';
 import { AppLogger } from '../../../../libs/infrastructure/logger/interfaces/logger.interface';
-import { ConfirmChannel, ConsumeMessage } from 'amqplib';
 import { SUBSCRIPTION_RETRY_EXCHANGE } from '../../../common/constants/messaging.const';
 import {
   RETRY_TIME_IN_MS,

@@ -1,9 +1,9 @@
-import { GithubRelease } from '../../../../apps/tracker/src/modules/github';
+import { RepositoryRelease } from '../../../../libs/contracts/main/messaging/subscription.events';
 
 export interface RepositoryReleaseNotificationSenderInterface {
   sendRepositoryReleaseNotification(
     to: string,
-    release: GithubRelease,
+    release: RepositoryRelease,
     unsubscribeUrl: string,
   ): Promise<void>;
 }

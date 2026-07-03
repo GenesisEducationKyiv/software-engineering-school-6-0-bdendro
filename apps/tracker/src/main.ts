@@ -1,9 +1,9 @@
+import { promisify } from 'node:util';
 import { env } from './config/config';
 import { createContainer } from './container';
 import { createLoggerConfig } from './config/logger.config';
 import { PinoLogger } from '../../../libs/infrastructure/logger/pino-logger';
 import { createApp } from './app';
-import { promisify } from 'node:util';
 
 const SERVICE_NAME = 'Release Tracker Service';
 
