@@ -143,8 +143,11 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
     consumerManager,
     jobsManager,
     producers: {
-      base: { subscriptionBaseMessageProducer },
-      subscription: { subscriptionEventProducer, subscribeSagaCommandProducer },
+      subscription: {
+        subscriptionBaseMessageProducer,
+        subscriptionEventProducer,
+        subscribeSagaCommandProducer,
+      },
       dlxProducer,
     },
     controllers: { subscriptionController, metricsController },
