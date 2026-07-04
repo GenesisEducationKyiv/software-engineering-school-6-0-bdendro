@@ -11,7 +11,7 @@ const envSchema = z.object({
 
   RABBITMQ_URL: urlSchema,
 
-  TRACKER_PORT: z.coerce.number().int().min(1).max(65535).default(3002),
+  TRACKER_PORT: z.coerce.number().int().min(1).max(65535).default(3003),
 
   APP_BASE_URL: z.url({ protocol: /^https?$/ }),
   APP_TIMEZONE: z
