@@ -1,11 +1,15 @@
-import { SubscribeStatuses } from '../constants/subscriptions.const';
+import { SubscriptionOperationStatuses } from '../constants/subscriptions.const';
 import { RepositoryReleaseDetectedEvent } from '../schemas/repository-release.schema';
 import { SubscribeBody } from '../schemas/subscription.schema';
-import { Subscription, SubscriptionWithRepository } from '../types/subscription';
+import {
+  Subscription,
+  SubscriptionOperation,
+  SubscriptionWithRepository,
+} from '../types/subscription';
 
 export type SubscribeResult =
-  | { status: SubscribeStatuses['SUCCESS'] }
-  | { status: SubscribeStatuses['PENDING']; operationId: number };
+  | { status: SubscriptionOperationStatuses['SUCCESS'] }
+  | { status: SubscriptionOperationStatuses['PENDING']; operationId: number };
 
 export interface SubscriptionServiceInterface {
   getConfirmedSubscriptions(): Promise<Subscription[]>;
@@ -18,4 +22,5 @@ export interface SubscriptionServiceInterface {
   deleteUnconfirmed(expirationTimeInMs: number): Promise<number>;
 
   processRepositoryRelease(release: RepositoryReleaseDetectedEvent): Promise<void>;
+  getSubscriptionOperation(id: number): Promise<SubscriptionOperation | null>;
 }

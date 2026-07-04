@@ -7,4 +7,6 @@ export const SUBSCRIPTION_ERROR_MESSAGES = {
   UNIQUE_EMAIL_REPOSITORY: ERROR_MESSAGES.getUniqueConstraintMessage(SUBSCRIPTION_NAME, [
     'email, repository',
   ]),
+
+  OPERATION_NOT_ROUND: ERROR_MESSAGES.getNotFoundMessage(`${SUBSCRIPTION_NAME} Operation`),
 };

@@ -7,7 +7,11 @@ import {
 import { SubscribeBody } from './schemas/subscription.schema';
 import { NotFoundError } from '../../../libs/common/utils/errors/custom-errors';
 import { SUBSCRIPTION_ERROR_MESSAGES } from './constants/error-messages';
-import { Subscription, SubscriptionWithRepository } from './types/subscription';
+import {
+  Subscription,
+  SubscriptionOperation,
+  SubscriptionWithRepository,
+} from './types/subscription';
 import { buildConfirmationUrl, buildUnsubscribeUrl } from './utils/build-url';
 import {
   SubscriptionEventProducerInterface,
@@ -15,9 +19,13 @@ import {
 } from './interfaces/subscription-event.producer';
 import { RepositoryReleaseDetectedEvent } from './schemas/repository-release.schema';
 import { RepositoryRepositoryReadableInterface } from '../repository';
-import { SUBSCRIBE_STATUSES } from './constants/subscriptions.const';
+import { SUBSCRIPTION_OPERATION_STATUSES } from './constants/subscriptions.const';
 import { SubscribeSagaRepository } from './saga/interfaces/subscribe-saga.repository.interface';
 import { SubscribeSagaCommandProducer } from './saga/subscribe-saga-command.producer';
+import {
+  SUBSCRIBE_SAGA_ERROR_REASON,
+  SUBSCRIBE_SAGA_STATES,
+} from './saga/constants/subscribe-saga.const';
 
 type SubscriptionEventProducer = SubscriptionEventProducerInterface &
   SubscriptionRepositoryReleaseEventProducerInterface;
@@ -69,7 +77,7 @@ export class SubscriptionService implements SubscriptionServiceInterface {
     );
     if (repository) {
       await this.createSubscription(subscribeBody.email, repository.id, repository.repo);
-      return { status: SUBSCRIBE_STATUSES.SUCCESS };
+      return { status: SUBSCRIPTION_OPERATION_STATUSES.SUCCESS };
     }
 
     const saga = await this.subscribeSagaRepository.create({
@@ -80,7 +88,7 @@ export class SubscriptionService implements SubscriptionServiceInterface {
     await this.subscribeSagaCommandProducer.produceTrackRepo(subscribeBody.repo, {
       correlationId: saga.id,
     });
-    return { status: SUBSCRIBE_STATUSES.PENDING, operationId: saga.id };
+    return { status: SUBSCRIPTION_OPERATION_STATUSES.PENDING, operationId: saga.id };
   }
 
   async confirm(token: string): Promise<void> {
@@ -126,5 +134,33 @@ export class SubscriptionService implements SubscriptionServiceInterface {
     }
     // Will be modified with adding outbox
     await Promise.all(eventPromises);
+  }
+
+  async getSubscriptionOperation(id: number): Promise<SubscriptionOperation | null> {
+    const saga = await this.subscribeSagaRepository.getById(id);
+    if (!saga) return null;
+
+    switch (saga.state) {
+      case SUBSCRIBE_SAGA_STATES.STARTED:
+      case SUBSCRIBE_SAGA_STATES.REPOSITORY_TRACKED:
+        return {
+          status: SUBSCRIPTION_OPERATION_STATUSES.PENDING,
+          startedAt: saga.createdAt,
+        };
+
+      case SUBSCRIBE_SAGA_STATES.FAILED:
+      case SUBSCRIBE_SAGA_STATES.COMPENSATED:
+        return {
+          errorReason: saga.errorReason ?? SUBSCRIBE_SAGA_ERROR_REASON.UNKNOWN,
+          errorMessage: saga.errorMessage,
+          status: SUBSCRIPTION_OPERATION_STATUSES.FAILED,
+          startedAt: saga.createdAt,
+        };
+      default:
+        return {
+          status: SUBSCRIPTION_OPERATION_STATUSES.SUCCESS,
+          startedAt: saga.createdAt,
+        };
+    }
   }
 }

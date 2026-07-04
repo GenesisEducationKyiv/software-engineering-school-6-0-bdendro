@@ -12,7 +12,7 @@ import { SubscribeSagaRepository } from './saga/interfaces/subscribe-saga.reposi
 import { SubscribeSagaCommandProducer } from './saga/subscribe-saga-command.producer';
 import { RepositoryReleaseDetectedEvent } from './schemas/repository-release.schema';
 import { SubscribeSaga } from './saga/types/subscribe-saga';
-import { SUBSCRIBE_STATUSES } from './constants/subscriptions.const';
+import { SUBSCRIPTION_OPERATION_STATUSES } from './constants/subscriptions.const';
 
 describe('SubscriptionService', () => {
   let subscriptionService: SubscriptionService;
@@ -73,6 +73,7 @@ describe('SubscriptionService', () => {
     state: 'STARTED',
     subscriptionId: null,
     repoId: null,
+    errorReason: null,
     errorMessage: null,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -251,7 +252,7 @@ describe('SubscriptionService', () => {
       expect(subscribeSagaRepository.create).not.toHaveBeenCalled();
       expect(subscribeSagaCommandProducer.produceTrackRepo).not.toHaveBeenCalled();
 
-      expect(result).toStrictEqual({ status: SUBSCRIBE_STATUSES.SUCCESS });
+      expect(result).toStrictEqual({ status: SUBSCRIPTION_OPERATION_STATUSES.SUCCESS });
 
       createSubscriptionSpy.mockRestore();
     });
@@ -287,7 +288,7 @@ describe('SubscriptionService', () => {
       );
 
       expect(result).toStrictEqual({
-        status: SUBSCRIBE_STATUSES.PENDING,
+        status: SUBSCRIPTION_OPERATION_STATUSES.PENDING,
         operationId: createdSaga.id,
       });
 

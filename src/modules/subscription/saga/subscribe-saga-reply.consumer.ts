@@ -33,7 +33,10 @@ import {
 } from './schemas/subscribe-saga.schema';
 import { SUBSCRIPTION_ERROR_MESSAGES } from '../constants/error-messages';
 import { REPOSITORY_ERROR_MESSAGES } from '../../repository/constants/error-messages';
-import { SUBSCRIBE_SAGA_ERROR_MESSAGES } from './constants/subscribe-saga.const';
+import {
+  SUBSCRIBE_SAGA_ERROR_MESSAGES,
+  SUBSCRIBE_SAGA_ERROR_REASON,
+} from './constants/subscribe-saga.const';
 
 export class SubscribeSagaReplyConsumer implements MessageConsumerInterface {
   private readonly channelWrapper: ChannelWrapper;
@@ -215,7 +218,11 @@ export class SubscribeSagaReplyConsumer implements MessageConsumerInterface {
           (err.message.includes(SUBSCRIPTION_ERROR_MESSAGES.UNIQUE_EMAIL_REPOSITORY) ||
             err.message.includes(SUBSCRIPTION_ERROR_MESSAGES.UNIQUE_TOKEN))
         ) {
-          await this.sagaRepository.markFailed(correlationId, err.message);
+          await this.sagaRepository.markFailed(
+            correlationId,
+            SUBSCRIBE_SAGA_ERROR_REASON.SUBSCRIPTION_ALREADY_EXISTS,
+            err.message,
+          );
           try {
             const deletedRepository = await this.subscriptionRepositoryRepository.deleteById(
               receivedRepository.id,
@@ -250,7 +257,7 @@ export class SubscribeSagaReplyConsumer implements MessageConsumerInterface {
     await this.processMessage(msg, channel, repositoryTrackFailedReplySchema, async (payload) => {
       const { correlationId } = this.validateMessageProperties(msg);
       await Promise.all([
-        this.sagaRepository.markFailed(correlationId, payload.error_message),
+        this.sagaRepository.markFailed(correlationId, payload.error_reason, payload.error_message),
         this.sagaRepository.markCompensated(correlationId, true),
       ]);
     });

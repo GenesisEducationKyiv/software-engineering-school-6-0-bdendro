@@ -3,6 +3,8 @@ import { SUBSCRIPTION_ROUTE_PATHS } from './constants/subscriptions.const';
 import { SubscriptionControllerInterface } from './interfaces/subscription.controller.interface';
 import { validateRequest } from '../../../libs/common/middlewares/validate-request';
 import {
+  GetSubscriptionOperationParams,
+  getSubscriptionOperationParamsSchema,
   SubscribeBody,
   subscribeBodySchema,
   SubscriptionsQuery,
@@ -51,6 +53,17 @@ export function createSubscriptionRouter(
     async (req, res) => {
       await subscriptionController.getSubscriptionsByEmail(
         req as RequestWithValidatedQuery<SubscriptionsQuery>,
+        res,
+      );
+    },
+  );
+
+  router.get(
+    `/${SUBSCRIPTION_ROUTE_PATHS.SUBSCRIPTION_OPERATIONS}/:${SUBSCRIPTION_ROUTE_PATHS.OPERATION_ID}`,
+    validateRequest({ params: getSubscriptionOperationParamsSchema }),
+    async (req, res) => {
+      await subscriptionController.getSubscriptionOperation(
+        req as RequestWithValidatedParams<GetSubscriptionOperationParams>,
         res,
       );
     },

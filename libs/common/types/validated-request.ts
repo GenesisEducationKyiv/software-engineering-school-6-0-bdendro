@@ -19,13 +19,14 @@ export type RequestWithValidatedBody<TBody> = Request & {
   };
 };
 
-export type RequestWithValidatedParams<TParams extends ParamsDictionary> = Request & {
-  validated: {
-    params: TParams;
+export type RequestWithValidatedParams<TParams extends ParamsDictionary | Record<string, number>> =
+  Request & {
+    validated: {
+      params: TParams;
+    };
   };
-};
 
-export type RequestWithValidatedQuery<TQuery extends Query> = Request & {
+export type RequestWithValidatedQuery<TQuery extends Query | Record<string, number>> = Request & {
   validated: {
     query: TQuery;
   };

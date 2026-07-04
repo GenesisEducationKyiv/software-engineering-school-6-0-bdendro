@@ -5,6 +5,7 @@ import { PrismaDBClient } from '../../../infrastructure/database/prisma';
 import {
   SUBSCRIBE_SAGA_ERROR_MESSAGES,
   SUBSCRIBE_SAGA_STATES,
+  SubscribeSagaErrorReason,
   SubscribeSagaState,
 } from './constants/subscribe-saga.const';
 import { SubscribeSagaRepository } from './interfaces/subscribe-saga.repository.interface';
@@ -44,8 +45,12 @@ export class SubscribeSagaPrismaRepository implements SubscribeSagaRepository {
     return this.update(id, { state: SUBSCRIBE_SAGA_STATES.COMPLETED, subscriptionId });
   }
 
-  async markFailed(id: number, errorMessage: string): Promise<SubscribeSaga> {
-    return this.update(id, { state: SUBSCRIBE_SAGA_STATES.FAILED, errorMessage });
+  async markFailed(
+    id: number,
+    errorReason: SubscribeSagaErrorReason,
+    errorMessage: string,
+  ): Promise<SubscribeSaga> {
+    return this.update(id, { state: SUBSCRIBE_SAGA_STATES.FAILED, errorReason, errorMessage });
   }
 
   async markCompensated(id: number, removeRepoId: boolean): Promise<SubscribeSaga> {
