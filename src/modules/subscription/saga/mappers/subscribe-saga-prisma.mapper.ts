@@ -1,4 +1,5 @@
 import type { SubscribeSaga as PrismaSubscribeSaga } from '../../../../../libs/database/generated/prisma/client';
+import { SubscribeSagaErrorReason } from '../constants/subscribe-saga.const';
 import { SubscribeSaga } from '../types/subscribe-saga';
 
 export class SubscribeSagaPrismaMapper {
@@ -14,6 +15,7 @@ export class SubscribeSagaPrismaMapper {
       repoId: prismaSubscribeSaga.repoId,
       subscriptionId: prismaSubscribeSaga.subscriptionId,
       state: prismaSubscribeSaga.state,
+      errorReason: prismaSubscribeSaga.errorReason as SubscribeSagaErrorReason | null,
       errorMessage: prismaSubscribeSaga.errorMessage,
       createdAt: prismaSubscribeSaga.createdAt,
       updatedAt: prismaSubscribeSaga.updatedAt,

@@ -4,9 +4,18 @@ import {
   RequestWithValidatedParams,
   RequestWithValidatedQuery,
 } from '../../../../libs/common/types/validated-request';
-import { SubscribeBody, SubscriptionsQuery, TokenParams } from '../schemas/subscription.schema';
+import {
+  GetSubscriptionOperationParams,
+  SubscribeBody,
+  SubscriptionsQuery,
+  TokenParams,
+} from '../schemas/subscription.schema';
 import { MessageResponse } from '../../../../libs/common/types/response';
-import { SubscribeResponse, SubscriptionResponse } from '../dto/subscription.response.dto';
+import {
+  SubscribeResponse,
+  SubscriptionOperationResponse,
+  SubscriptionResponse,
+} from '../dto/subscription.response.dto';
 
 export interface SubscriptionControllerInterface {
   subscribe(
@@ -27,5 +36,10 @@ export interface SubscriptionControllerInterface {
   getSubscriptionsByEmail(
     req: RequestWithValidatedQuery<SubscriptionsQuery>,
     res: Response<SubscriptionResponse[]>,
+  ): Promise<void>;
+
+  getSubscriptionOperation(
+    req: RequestWithValidatedParams<GetSubscriptionOperationParams>,
+    res: Response<SubscriptionOperationResponse>,
   ): Promise<void>;
 }

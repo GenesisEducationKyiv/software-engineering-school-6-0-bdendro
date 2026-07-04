@@ -117,6 +117,7 @@ services:
       RABBITMQ_URL: amqp://app:app@rabbitmq:5672
       NOTIFICATION_SERVICE_URL: http://localhost:3002
       NOTIFICATION_PORT: 3002
+      TRACKER_PORT: 3003
       EMAIL: ${EMAIL}
       EMAIL_PASSWORD: ${EMAIL_PASSWORD}
       EMAIL_HOST: mailpit

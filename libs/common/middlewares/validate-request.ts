@@ -16,7 +16,6 @@ export function validateRequest(schemas: RequestSchemas) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     const details: ValidationErrorDetail[] = [];
     const validated: ValidatedRequestPart = {};
-
     for (const part of requestParts) {
       const schema = schemas[part];
 

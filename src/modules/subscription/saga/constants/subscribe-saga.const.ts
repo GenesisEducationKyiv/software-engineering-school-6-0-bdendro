@@ -14,7 +14,11 @@ export type SubscribeSagaState = (typeof SUBSCRIBE_SAGA_STATES)[keyof typeof SUB
 
 export const SUBSCRIBE_SAGA_ERROR_REASON = {
   GITHUB_REPO_NOT_FOUND: 'GITHUB_REPO_NOT_FOUND',
+  SUBSCRIPTION_ALREADY_EXISTS: 'SUBSCRIPTION_ALREADY_EXISTS',
+  UNKNOWN: 'UNKNOWN',
 } as const;
+
+export const SUBSCRIBE_SAGA_UNKNOWN_ERROR_MESSAGE = 'Unknown error.';
 
 export type SubscribeSagaErrorReason =
   (typeof SUBSCRIBE_SAGA_ERROR_REASON)[keyof typeof SUBSCRIBE_SAGA_ERROR_REASON];

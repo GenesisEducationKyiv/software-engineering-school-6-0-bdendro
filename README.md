@@ -238,12 +238,13 @@ Base path:
 /api
 ```
 
-| Method | Endpoint                                    | Description                                                         |
-| ------ | ------------------------------------------- | ------------------------------------------------------------------- |
-| `POST` | `/api/subscribe`                            | Subscribe an email to release notifications for a GitHub repository |
-| `GET`  | `/api/confirm/{token}`                      | Confirm a subscription using the token from the email               |
-| `GET`  | `/api/unsubscribe/{token}`                  | Unsubscribe using the token from the email                          |
-| `GET`  | `/api/subscriptions?email=user@example.com` | Get all subscriptions for the given email                           |
+| Method | Endpoint                                     | Description                                                         |
+| ------ | -------------------------------------------- | ------------------------------------------------------------------- |
+| `POST` | `/api/subscribe`                             | Subscribe an email to release notifications for a GitHub repository |
+| `GET`  | `/api/confirm/{token}`                       | Confirm a subscription using the token from the email               |
+| `GET`  | `/api/unsubscribe/{token}`                   | Unsubscribe using the token from the email                          |
+| `GET`  | `/api/subscriptions?email=user@example.com`  | Get all subscriptions for the given email                           |
+| `GET`  | `/api/subscription-operations/{operationId}` | Check the status of an asynchronous subscription operation          |
 
 ### Example request: subscribe
 

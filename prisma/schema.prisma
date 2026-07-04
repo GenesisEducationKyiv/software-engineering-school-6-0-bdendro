@@ -41,6 +41,7 @@ model SubscribeSaga {
   subscriptionId Int?     @map("subscription_id")
   repoId         Int?     @map("repo_id")
   state          String   @default("STARTED")
+  errorReason    String?  @map("error_reason")
   errorMessage   String?  @map("error_message")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")

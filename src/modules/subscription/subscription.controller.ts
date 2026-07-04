@@ -5,12 +5,25 @@ import {
   RequestWithValidatedParams,
   RequestWithValidatedQuery,
 } from '../../../libs/common/types/validated-request';
-import { SubscribeBody, SubscriptionsQuery, TokenParams } from './schemas/subscription.schema';
+import {
+  GetSubscriptionOperationParams,
+  SubscribeBody,
+  SubscriptionsQuery,
+  TokenParams,
+} from './schemas/subscription.schema';
 import { SubscriptionServiceInterface } from './interfaces/subscription.service.interface';
 import { MessageResponse } from '../../../libs/common/types/response';
-import { SubscribeResponse, SubscriptionResponse } from './dto/subscription.response.dto';
+import {
+  SubscribeResponse,
+  SubscriptionOperationResponse,
+  SubscriptionResponse,
+} from './dto/subscription.response.dto';
 import { SubscriptionControllerMapper } from './mappers/subscription-controller.mapper';
-import { SUBSCRIBE_STATUSES } from './constants/subscriptions.const';
+import { SUBSCRIPTION_OPERATION_STATUSES } from './constants/subscriptions.const';
+import { NotFoundError } from '../../../libs/common/utils/errors/custom-errors';
+import { SUBSCRIPTION_ERROR_MESSAGES } from './constants/error-messages';
+
+const SUBSCRIBE_SUCCESS_MESSAGE = 'Subscription successful. Confirmation email sent.';
 
 export class SubscriptionController implements SubscriptionControllerInterface {
   constructor(
@@ -23,14 +36,14 @@ export class SubscriptionController implements SubscriptionControllerInterface {
     res: Response<SubscribeResponse>,
   ): Promise<void> {
     const result = await this.subscriptionService.subscribe(req.validated.body);
-    if (result.status === SUBSCRIBE_STATUSES.PENDING) {
+    if (result.status === SUBSCRIPTION_OPERATION_STATUSES.PENDING) {
       res.status(202).json({
         message: 'Processing subscription. Use operationId to check the status.',
         operationId: result.operationId.toString(),
       });
       return;
     }
-    res.status(201).json({ message: 'Subscription successful. Confirmation email sent.' });
+    res.status(201).json({ message: SUBSCRIBE_SUCCESS_MESSAGE });
   }
 
   async confirm(
@@ -57,5 +70,26 @@ export class SubscriptionController implements SubscriptionControllerInterface {
       req.validated.query.email,
     );
     res.status(200).json(this.mapper.toSubscriptionsResponse(subscriptions));
+  }
+
+  async getSubscriptionOperation(
+    req: RequestWithValidatedParams<GetSubscriptionOperationParams>,
+    res: Response<SubscriptionOperationResponse>,
+  ): Promise<void> {
+    const subscriptionOperation = await this.subscriptionService.getSubscriptionOperation(
+      req.validated.params.operationId,
+    );
+
+    if (!subscriptionOperation)
+      throw new NotFoundError(SUBSCRIPTION_ERROR_MESSAGES.OPERATION_NOT_ROUND);
+
+    const message =
+      subscriptionOperation.status === SUBSCRIPTION_OPERATION_STATUSES.SUCCESS
+        ? SUBSCRIBE_SUCCESS_MESSAGE
+        : undefined;
+
+    const response = this.mapper.toSubscriptionOperationResponse(subscriptionOperation, message);
+
+    res.status(200).json(response);
   }
 }
