@@ -26,6 +26,20 @@ export default defineConfig({
   ],
   webServer: [
     {
+      command: 'npm run start:github',
+      url: 'http://localhost:3004/health',
+      timeout: 120_000,
+      reuseExistingServer: !process.env.CI,
+      env: { NODE_ENV: 'test' },
+    },
+    {
+      command: 'npm run start:tracker',
+      url: 'http://localhost:3003/health',
+      timeout: 120_000,
+      reuseExistingServer: !process.env.CI,
+      env: { NODE_ENV: 'test' },
+    },
+    {
       command: 'npm run start:notification',
       url: 'http://localhost:3002/health',
       timeout: 120_000,
