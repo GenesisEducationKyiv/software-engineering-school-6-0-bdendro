@@ -12,6 +12,7 @@ COPY docs/swagger.json ./docs/swagger.json
 FROM base AS deps
 
 COPY buf.yaml buf.gen.yaml ./
+COPY libs ./libs
 
 RUN npm ci
 
