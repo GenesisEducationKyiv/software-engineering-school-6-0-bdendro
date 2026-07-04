@@ -15,6 +15,7 @@ RUN npm ci
 
 # Generate Prisma client
 RUN npm run prisma:generate
+RUN npm run proto:generate
 
 # --- Migration stage ---
 FROM deps AS migration

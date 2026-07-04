@@ -101,6 +101,9 @@ jobs:
       - name: Generate prisma client
         run: npm run prisma:generate
 
+      - name: Generate gRPC contracts
+        run: npm run proto:generate
+
       - name: Run unit tests
         run: npm run test:unit
 

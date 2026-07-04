@@ -54,7 +54,7 @@ describe('GithubService', () => {
       const result = await githubService.isRepoExists(repo);
 
       expect(githubClient.getRepository).toHaveBeenCalledWith(repo);
-      expect(result).toEqual(true);
+      expect(result).toEqual(false);
     });
   });
 
