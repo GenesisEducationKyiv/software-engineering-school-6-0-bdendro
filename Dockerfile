@@ -11,6 +11,8 @@ COPY docs/swagger.json ./docs/swagger.json
 # --- Dependencies stage ---
 FROM base AS deps
 
+COPY buf.yaml buf.gen.yaml ./
+
 RUN npm ci
 
 # Generate Prisma client
