@@ -13,6 +13,10 @@ import { SubscribeSagaCommandProducer } from './saga/subscribe-saga-command.prod
 import { RepositoryReleaseDetectedEvent } from './schemas/repository-release.schema';
 import { SubscribeSaga } from './saga/types/subscribe-saga';
 import { SUBSCRIPTION_OPERATION_STATUSES } from './constants/subscriptions.const';
+import {
+  SUBSCRIBE_SAGA_ERROR_REASON,
+  SUBSCRIBE_SAGA_STATES,
+} from './saga/constants/subscribe-saga.const';
 
 describe('SubscriptionService', () => {
   let subscriptionService: SubscriptionService;
@@ -433,6 +437,87 @@ describe('SubscriptionService', () => {
       );
 
       getSubscriptionsByRepoSpy.mockRestore();
+    });
+  });
+
+  describe('getSubscriptionOperation', () => {
+    it('should return null when saga does not exist', async () => {
+      const operationId = 999;
+      subscribeSagaRepository.getById.mockResolvedValue(null);
+
+      const result = await subscriptionService.getSubscriptionOperation(operationId);
+
+      expect(subscribeSagaRepository.getById).toHaveBeenCalledTimes(1);
+      expect(subscribeSagaRepository.getById).toHaveBeenCalledWith(operationId);
+      expect(result).toBeNull();
+    });
+
+    it.each([SUBSCRIBE_SAGA_STATES.STARTED, SUBSCRIBE_SAGA_STATES.REPOSITORY_TRACKED])(
+      'should return PENDING status when saga state is %s',
+      async (state) => {
+        const saga = createSubscribeSaga({ state });
+        subscribeSagaRepository.getById.mockResolvedValue(saga);
+
+        const result = await subscriptionService.getSubscriptionOperation(saga.id);
+
+        expect(subscribeSagaRepository.getById).toHaveBeenCalledTimes(1);
+        expect(subscribeSagaRepository.getById).toHaveBeenCalledWith(saga.id);
+        expect(result).toStrictEqual({
+          status: SUBSCRIPTION_OPERATION_STATUSES.PENDING,
+          startedAt: saga.createdAt,
+        });
+      },
+    );
+
+    it.each([SUBSCRIBE_SAGA_STATES.FAILED, SUBSCRIBE_SAGA_STATES.COMPENSATED])(
+      'should return FAILED status with error details when saga state is %s',
+      async (state) => {
+        const saga = createSubscribeSaga({
+          state,
+          errorReason: SUBSCRIBE_SAGA_ERROR_REASON.GITHUB_REPO_NOT_FOUND,
+          errorMessage: 'Repo not found',
+        });
+        subscribeSagaRepository.getById.mockResolvedValue(saga);
+
+        const result = await subscriptionService.getSubscriptionOperation(saga.id);
+
+        expect(result).toStrictEqual({
+          status: SUBSCRIPTION_OPERATION_STATUSES.FAILED,
+          startedAt: saga.createdAt,
+          errorReason: saga.errorReason,
+          errorMessage: saga.errorMessage,
+        });
+      },
+    );
+
+    it('should fallback to UNKNOWN error reason when reason is null in error states', async () => {
+      const saga = createSubscribeSaga({
+        state: SUBSCRIBE_SAGA_STATES.FAILED,
+        errorReason: null,
+        errorMessage: null,
+      });
+      subscribeSagaRepository.getById.mockResolvedValue(saga);
+
+      const result = await subscriptionService.getSubscriptionOperation(saga.id);
+
+      expect(result).toStrictEqual({
+        status: SUBSCRIPTION_OPERATION_STATUSES.FAILED,
+        startedAt: saga.createdAt,
+        errorReason: SUBSCRIBE_SAGA_ERROR_REASON.UNKNOWN,
+        errorMessage: null,
+      });
+    });
+
+    it('should return SUCCESS status for any other state (e.g., COMPLETED)', async () => {
+      const saga = createSubscribeSaga({ state: SUBSCRIBE_SAGA_STATES.COMPLETED });
+      subscribeSagaRepository.getById.mockResolvedValue(saga);
+
+      const result = await subscriptionService.getSubscriptionOperation(saga.id);
+
+      expect(result).toStrictEqual({
+        status: SUBSCRIPTION_OPERATION_STATUSES.SUCCESS,
+        startedAt: saga.createdAt,
+      });
     });
   });
 });

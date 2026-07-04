@@ -14,7 +14,10 @@ import type {
 } from '../../../libs/database/generated/prisma/models';
 import { RabbitMqConnection } from '../../../libs/infrastructure/message-broker/rabbitmq.connection';
 import { SUBSCRIPTION_EVENT_ROUTING_KEYS } from '../../../libs/contracts/main/messaging/routing-keys';
-import { SUBSCRIBE_SAGA_STATES } from '../../../src/modules/subscription/saga/constants/subscribe-saga.const';
+import {
+  SUBSCRIBE_SAGA_ERROR_REASON,
+  SUBSCRIBE_SAGA_STATES,
+} from '../../../src/modules/subscription/saga/constants/subscribe-saga.const';
 
 const testEmail = 'test@example.com';
 const testRepo = 'nodejs/node';
@@ -58,7 +61,7 @@ const createSubscriptionInput = (
   ...overrides,
 });
 
-const _createSubscribeSagaInput = (
+const createSubscribeSagaInput = (
   overrides: Partial<SubscribeSagaCreateInput> = {},
 ): SubscribeSagaCreateInput => ({
   email: testEmail,
@@ -524,6 +527,78 @@ describe('Subscriptions API', () => {
       const res = await request(app).get(SUBSCRIPTIONS_URL).query({ email: testEmail }).expect(200);
 
       expect(res.body).toStrictEqual([]);
+    });
+  });
+
+  describe(`GET /api/subscription-operations/:operationId`, () => {
+    const OPERATION_URL = (id: string | number) => `/api/subscription-operations/${id}`;
+
+    it('should return 200 and PENDING status when saga is in STARTED state', async () => {
+      const saga = await db.createSaga(
+        createSubscribeSagaInput({ state: SUBSCRIBE_SAGA_STATES.STARTED }),
+      );
+
+      const res = await request(app).get(OPERATION_URL(saga.id)).expect(200);
+
+      expect(res.body).toStrictEqual({
+        status: 'PENDING',
+        startedAt: saga.createdAt.toISOString(),
+      });
+    });
+
+    it('should return 200 and SUCCESS status with message when saga is in COMPLETED state', async () => {
+      const saga = await db.createSaga(
+        createSubscribeSagaInput({ state: SUBSCRIBE_SAGA_STATES.COMPLETED }),
+      );
+
+      const res = await request(app).get(OPERATION_URL(saga.id)).expect(200);
+
+      expect(res.body).toStrictEqual({
+        status: 'SUCCESS',
+        startedAt: saga.createdAt.toISOString(),
+        message: expect.any(String),
+      });
+    });
+
+    it('should return 200 and FAILED status with error details when saga is in FAILED state', async () => {
+      const saga = await db.createSaga(
+        createSubscribeSagaInput({
+          state: SUBSCRIBE_SAGA_STATES.FAILED,
+          errorReason: SUBSCRIBE_SAGA_ERROR_REASON.GITHUB_REPO_NOT_FOUND,
+          errorMessage: 'Repo not found',
+        }),
+      );
+
+      const res = await request(app).get(OPERATION_URL(saga.id)).expect(200);
+
+      expect(res.body).toStrictEqual({
+        status: 'FAILED',
+        startedAt: saga.createdAt.toISOString(),
+        message: saga.errorMessage,
+      });
+    });
+
+    it('should return 400 if operationId format is invalid', async () => {
+      const invalidId = 'invalid-id';
+      const res = await request(app).get(OPERATION_URL(invalidId)).expect(400);
+
+      expect(res.body).toStrictEqual({
+        message: expect.any(String),
+        details: expect.arrayContaining([
+          {
+            path: ['operationId'],
+            message: expect.any(String),
+          },
+        ]),
+      });
+    });
+
+    it('should return 404 if operation does not exist', async () => {
+      const res = await request(app).get(OPERATION_URL(99999)).expect(404);
+
+      expect(res.body).toStrictEqual({
+        message: expect.any(String),
+      });
     });
   });
 });
