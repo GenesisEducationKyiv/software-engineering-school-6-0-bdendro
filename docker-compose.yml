@@ -91,7 +91,7 @@ services:
       TRACKER_PORT: 3003
       DATABASE_URL: postgresql://postgres:postgres@db:5432/github_subscription_api?schema=public
       RABBITMQ_URL: amqp://app:app@rabbitmq:5672
-      GITHUB_URL: github:50051
+      GITHUB_SERVICE_URL: github:50051
     logging:
       options:
         max-size: '10m'

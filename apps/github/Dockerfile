@@ -14,6 +14,7 @@ COPY buf.yaml buf.gen.yaml ./
 COPY apps/github ./apps/github
 COPY libs ./libs
 
+RUN npm run proto:generate
 RUN npm run build:github
 
 

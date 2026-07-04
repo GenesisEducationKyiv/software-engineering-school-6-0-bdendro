@@ -5,7 +5,7 @@
 // source: github/v1/github.proto
 
 /* eslint-disable */
-import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire';
 import {
   type CallOptions,
   type ChannelCredentials,
@@ -17,9 +17,9 @@ import {
   type Metadata,
   type ServiceError,
   type UntypedServiceImplementation,
-} from "@grpc/grpc-js";
+} from '@grpc/grpc-js';
 
-export const protobufPackage = "github.v1";
+export const protobufPackage = 'github.v1';
 
 export interface CheckRepositoryExistsRequest {
   owner: string;
@@ -45,15 +45,18 @@ export interface GetLatestReleaseResponse {
 }
 
 function createBaseCheckRepositoryExistsRequest(): CheckRepositoryExistsRequest {
-  return { owner: "", repo: "" };
+  return { owner: '', repo: '' };
 }
 
 export const CheckRepositoryExistsRequest: MessageFns<CheckRepositoryExistsRequest> = {
-  encode(message: CheckRepositoryExistsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.owner !== "") {
+  encode(
+    message: CheckRepositoryExistsRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.owner !== '') {
       writer.uint32(10).string(message.owner);
     }
-    if (message.repo !== "") {
+    if (message.repo !== '') {
       writer.uint32(18).string(message.repo);
     }
     return writer;
@@ -93,29 +96,33 @@ export const CheckRepositoryExistsRequest: MessageFns<CheckRepositoryExistsReque
 
   fromJSON(object: any): CheckRepositoryExistsRequest {
     return {
-      owner: isSet(object.owner) ? globalThis.String(object.owner) : "",
-      repo: isSet(object.repo) ? globalThis.String(object.repo) : "",
+      owner: isSet(object.owner) ? globalThis.String(object.owner) : '',
+      repo: isSet(object.repo) ? globalThis.String(object.repo) : '',
     };
   },
 
   toJSON(message: CheckRepositoryExistsRequest): unknown {
     const obj: any = {};
-    if (message.owner !== "") {
+    if (message.owner !== '') {
       obj.owner = message.owner;
     }
-    if (message.repo !== "") {
+    if (message.repo !== '') {
       obj.repo = message.repo;
     }
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CheckRepositoryExistsRequest>, I>>(base?: I): CheckRepositoryExistsRequest {
+  create<I extends Exact<DeepPartial<CheckRepositoryExistsRequest>, I>>(
+    base?: I,
+  ): CheckRepositoryExistsRequest {
     return CheckRepositoryExistsRequest.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<CheckRepositoryExistsRequest>, I>>(object: I): CheckRepositoryExistsRequest {
+  fromPartial<I extends Exact<DeepPartial<CheckRepositoryExistsRequest>, I>>(
+    object: I,
+  ): CheckRepositoryExistsRequest {
     const message = createBaseCheckRepositoryExistsRequest();
-    message.owner = object.owner ?? "";
-    message.repo = object.repo ?? "";
+    message.owner = object.owner ?? '';
+    message.repo = object.repo ?? '';
     return message;
   },
 };
@@ -125,7 +132,10 @@ function createBaseCheckRepositoryExistsResponse(): CheckRepositoryExistsRespons
 }
 
 export const CheckRepositoryExistsResponse: MessageFns<CheckRepositoryExistsResponse> = {
-  encode(message: CheckRepositoryExistsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: CheckRepositoryExistsResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.exists !== false) {
       writer.uint32(8).bool(message.exists);
     }
@@ -168,7 +178,9 @@ export const CheckRepositoryExistsResponse: MessageFns<CheckRepositoryExistsResp
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CheckRepositoryExistsResponse>, I>>(base?: I): CheckRepositoryExistsResponse {
+  create<I extends Exact<DeepPartial<CheckRepositoryExistsResponse>, I>>(
+    base?: I,
+  ): CheckRepositoryExistsResponse {
     return CheckRepositoryExistsResponse.fromPartial(base ?? ({} as any));
   },
   fromPartial<I extends Exact<DeepPartial<CheckRepositoryExistsResponse>, I>>(
@@ -181,15 +193,18 @@ export const CheckRepositoryExistsResponse: MessageFns<CheckRepositoryExistsResp
 };
 
 function createBaseGetLatestReleaseRequest(): GetLatestReleaseRequest {
-  return { owner: "", repo: "" };
+  return { owner: '', repo: '' };
 }
 
 export const GetLatestReleaseRequest: MessageFns<GetLatestReleaseRequest> = {
-  encode(message: GetLatestReleaseRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.owner !== "") {
+  encode(
+    message: GetLatestReleaseRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.owner !== '') {
       writer.uint32(10).string(message.owner);
     }
-    if (message.repo !== "") {
+    if (message.repo !== '') {
       writer.uint32(18).string(message.repo);
     }
     return writer;
@@ -229,52 +244,59 @@ export const GetLatestReleaseRequest: MessageFns<GetLatestReleaseRequest> = {
 
   fromJSON(object: any): GetLatestReleaseRequest {
     return {
-      owner: isSet(object.owner) ? globalThis.String(object.owner) : "",
-      repo: isSet(object.repo) ? globalThis.String(object.repo) : "",
+      owner: isSet(object.owner) ? globalThis.String(object.owner) : '',
+      repo: isSet(object.repo) ? globalThis.String(object.repo) : '',
     };
   },
 
   toJSON(message: GetLatestReleaseRequest): unknown {
     const obj: any = {};
-    if (message.owner !== "") {
+    if (message.owner !== '') {
       obj.owner = message.owner;
     }
-    if (message.repo !== "") {
+    if (message.repo !== '') {
       obj.repo = message.repo;
     }
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetLatestReleaseRequest>, I>>(base?: I): GetLatestReleaseRequest {
+  create<I extends Exact<DeepPartial<GetLatestReleaseRequest>, I>>(
+    base?: I,
+  ): GetLatestReleaseRequest {
     return GetLatestReleaseRequest.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<GetLatestReleaseRequest>, I>>(object: I): GetLatestReleaseRequest {
+  fromPartial<I extends Exact<DeepPartial<GetLatestReleaseRequest>, I>>(
+    object: I,
+  ): GetLatestReleaseRequest {
     const message = createBaseGetLatestReleaseRequest();
-    message.owner = object.owner ?? "";
-    message.repo = object.repo ?? "";
+    message.owner = object.owner ?? '';
+    message.repo = object.repo ?? '';
     return message;
   },
 };
 
 function createBaseGetLatestReleaseResponse(): GetLatestReleaseResponse {
-  return { id: 0, repoName: "", tagName: "", name: undefined, htmlUrl: "", publishedAt: undefined };
+  return { id: 0, repoName: '', tagName: '', name: undefined, htmlUrl: '', publishedAt: undefined };
 }
 
 export const GetLatestReleaseResponse: MessageFns<GetLatestReleaseResponse> = {
-  encode(message: GetLatestReleaseResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: GetLatestReleaseResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.id !== 0) {
       writer.uint32(8).int32(message.id);
     }
-    if (message.repoName !== "") {
+    if (message.repoName !== '') {
       writer.uint32(18).string(message.repoName);
     }
-    if (message.tagName !== "") {
+    if (message.tagName !== '') {
       writer.uint32(26).string(message.tagName);
     }
     if (message.name !== undefined) {
       writer.uint32(34).string(message.name);
     }
-    if (message.htmlUrl !== "") {
+    if (message.htmlUrl !== '') {
       writer.uint32(42).string(message.htmlUrl);
     }
     if (message.publishedAt !== undefined) {
@@ -353,24 +375,24 @@ export const GetLatestReleaseResponse: MessageFns<GetLatestReleaseResponse> = {
       repoName: isSet(object.repoName)
         ? globalThis.String(object.repoName)
         : isSet(object.repo_name)
-        ? globalThis.String(object.repo_name)
-        : "",
+          ? globalThis.String(object.repo_name)
+          : '',
       tagName: isSet(object.tagName)
         ? globalThis.String(object.tagName)
         : isSet(object.tag_name)
-        ? globalThis.String(object.tag_name)
-        : "",
+          ? globalThis.String(object.tag_name)
+          : '',
       name: isSet(object.name) ? globalThis.String(object.name) : undefined,
       htmlUrl: isSet(object.htmlUrl)
         ? globalThis.String(object.htmlUrl)
         : isSet(object.html_url)
-        ? globalThis.String(object.html_url)
-        : "",
+          ? globalThis.String(object.html_url)
+          : '',
       publishedAt: isSet(object.publishedAt)
         ? globalThis.String(object.publishedAt)
         : isSet(object.published_at)
-        ? globalThis.String(object.published_at)
-        : undefined,
+          ? globalThis.String(object.published_at)
+          : undefined,
     };
   },
 
@@ -379,16 +401,16 @@ export const GetLatestReleaseResponse: MessageFns<GetLatestReleaseResponse> = {
     if (message.id !== 0) {
       obj.id = Math.round(message.id);
     }
-    if (message.repoName !== "") {
+    if (message.repoName !== '') {
       obj.repoName = message.repoName;
     }
-    if (message.tagName !== "") {
+    if (message.tagName !== '') {
       obj.tagName = message.tagName;
     }
     if (message.name !== undefined) {
       obj.name = message.name;
     }
-    if (message.htmlUrl !== "") {
+    if (message.htmlUrl !== '') {
       obj.htmlUrl = message.htmlUrl;
     }
     if (message.publishedAt !== undefined) {
@@ -397,16 +419,20 @@ export const GetLatestReleaseResponse: MessageFns<GetLatestReleaseResponse> = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetLatestReleaseResponse>, I>>(base?: I): GetLatestReleaseResponse {
+  create<I extends Exact<DeepPartial<GetLatestReleaseResponse>, I>>(
+    base?: I,
+  ): GetLatestReleaseResponse {
     return GetLatestReleaseResponse.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<GetLatestReleaseResponse>, I>>(object: I): GetLatestReleaseResponse {
+  fromPartial<I extends Exact<DeepPartial<GetLatestReleaseResponse>, I>>(
+    object: I,
+  ): GetLatestReleaseResponse {
     const message = createBaseGetLatestReleaseResponse();
     message.id = object.id ?? 0;
-    message.repoName = object.repoName ?? "";
-    message.tagName = object.tagName ?? "";
+    message.repoName = object.repoName ?? '';
+    message.tagName = object.tagName ?? '';
     message.name = object.name ?? undefined;
-    message.htmlUrl = object.htmlUrl ?? "";
+    message.htmlUrl = object.htmlUrl ?? '';
     message.publishedAt = object.publishedAt ?? undefined;
     return message;
   },
@@ -415,31 +441,38 @@ export const GetLatestReleaseResponse: MessageFns<GetLatestReleaseResponse> = {
 export type GithubServiceService = typeof GithubServiceService;
 export const GithubServiceService = {
   checkRepositoryExists: {
-    path: "/github.v1.GithubService/CheckRepositoryExists" as const,
+    path: '/github.v1.GithubService/CheckRepositoryExists' as const,
     requestStream: false as const,
     responseStream: false as const,
     requestSerialize: (value: CheckRepositoryExistsRequest): Buffer =>
       Buffer.from(CheckRepositoryExistsRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): CheckRepositoryExistsRequest => CheckRepositoryExistsRequest.decode(value),
+    requestDeserialize: (value: Buffer): CheckRepositoryExistsRequest =>
+      CheckRepositoryExistsRequest.decode(value),
     responseSerialize: (value: CheckRepositoryExistsResponse): Buffer =>
       Buffer.from(CheckRepositoryExistsResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CheckRepositoryExistsResponse => CheckRepositoryExistsResponse.decode(value),
+    responseDeserialize: (value: Buffer): CheckRepositoryExistsResponse =>
+      CheckRepositoryExistsResponse.decode(value),
   },
   getLatestRelease: {
-    path: "/github.v1.GithubService/GetLatestRelease" as const,
+    path: '/github.v1.GithubService/GetLatestRelease' as const,
     requestStream: false as const,
     responseStream: false as const,
     requestSerialize: (value: GetLatestReleaseRequest): Buffer =>
       Buffer.from(GetLatestReleaseRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetLatestReleaseRequest => GetLatestReleaseRequest.decode(value),
+    requestDeserialize: (value: Buffer): GetLatestReleaseRequest =>
+      GetLatestReleaseRequest.decode(value),
     responseSerialize: (value: GetLatestReleaseResponse): Buffer =>
       Buffer.from(GetLatestReleaseResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): GetLatestReleaseResponse => GetLatestReleaseResponse.decode(value),
+    responseDeserialize: (value: Buffer): GetLatestReleaseResponse =>
+      GetLatestReleaseResponse.decode(value),
   },
 } as const;
 
 export interface GithubServiceServer extends UntypedServiceImplementation {
-  checkRepositoryExists: handleUnaryCall<CheckRepositoryExistsRequest, CheckRepositoryExistsResponse>;
+  checkRepositoryExists: handleUnaryCall<
+    CheckRepositoryExistsRequest,
+    CheckRepositoryExistsResponse
+  >;
   getLatestRelease: handleUnaryCall<GetLatestReleaseRequest, GetLatestReleaseResponse>;
 }
 
@@ -478,23 +511,32 @@ export interface GithubServiceClient extends Client {
 
 export const GithubServiceClient = makeGenericClientConstructor(
   GithubServiceService,
-  "github.v1.GithubService",
+  'github.v1.GithubService',
 ) as unknown as {
-  new (address: string, credentials: ChannelCredentials, options?: Partial<ClientOptions>): GithubServiceClient;
+  new (
+    address: string,
+    credentials: ChannelCredentials,
+    options?: Partial<ClientOptions>,
+  ): GithubServiceClient;
   service: typeof GithubServiceService;
   serviceName: string;
 };
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 
-export type DeepPartial<T> = T extends Builtin ? T
-  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
-  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
-  : Partial<T>;
+export type DeepPartial<T> = T extends Builtin
+  ? T
+  : T extends globalThis.Array<infer U>
+    ? globalThis.Array<DeepPartial<U>>
+    : T extends ReadonlyArray<infer U>
+      ? ReadonlyArray<DeepPartial<U>>
+      : T extends {}
+        ? { [K in keyof T]?: DeepPartial<T[K]> }
+        : Partial<T>;
 
 type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
+export type Exact<P, I extends P> = P extends Builtin
+  ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isSet(value: any): boolean {
