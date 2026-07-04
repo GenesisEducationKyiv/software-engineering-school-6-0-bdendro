@@ -37,6 +37,7 @@
     "test:cov": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^2.12.1",
     "@grpc/grpc-js": "^1.14.4",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
