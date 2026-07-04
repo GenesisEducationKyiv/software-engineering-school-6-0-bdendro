@@ -47,6 +47,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check code formatting
+        run: npm run format:diff
+
       - name: Generate prisma client
         run: npm run prisma:generate
 
@@ -55,9 +58,6 @@ jobs:
 
       - name: Generate gRPC contracts
         run: npm run proto:generate
-
-      - name: Check code formatting
-        run: npm run format:diff
 
       - name: Lint
         run: npm run lint
