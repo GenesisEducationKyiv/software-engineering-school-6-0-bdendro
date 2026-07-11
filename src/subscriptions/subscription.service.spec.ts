@@ -1,31 +1,35 @@
-import type { Subscription } from '../generated/prisma/client';
 import { NotFoundError } from '../common/utils/errors/custom-errors';
-import { EmailServiceInterface } from '../email/interfaces/email.service.interface';
 import { GithubServiceInterface } from '../github/interfaces/github.service.interface';
 import { SubscriptionRepositoryInterface } from './interfaces/subscription.repository.interface';
 import { SubscriptionService } from './subscription.service';
+import { SubscriptionEmailServiceInterface } from '../email/interfaces/subscription-email.service.interface';
+import { GithubRelease } from '../github/types/github-release';
+import { SubscribeBody } from './schemas/subscription.schema';
+import { Subscription } from './types/subscription';
 
 describe('SubscriptionService', () => {
   let subscriptionService: SubscriptionService;
   let subscriptionRepository: jest.Mocked<SubscriptionRepositoryInterface>;
-  let emailService: jest.Mocked<EmailServiceInterface>;
+  let emailService: jest.Mocked<SubscriptionEmailServiceInterface>;
   let githubService: jest.Mocked<GithubServiceInterface>;
 
   const email = 'test@example.com';
   const repo = 'owner/repo';
   const token = 'test-token';
 
-  const subscribeBody = {
+  const subscribeBody: SubscribeBody = {
     email,
     repo,
-  } as const;
+  };
 
-  const release = {
-    repo,
-    lastSeenTag: 'v1.2.3',
+  const release: GithubRelease = {
+    id: 1,
+    repoName: repo,
+    name: 'name',
+    tagName: 'v1.2.3',
     htmlUrl: 'https://github.com/owner/repo/releases/tag/v1.2.3',
     publishedAt: '2026-04-12T10:00:00.000Z',
-  } as const;
+  };
 
   const createSubscription = (overrides: Partial<Subscription> = {}): Subscription =>
     ({
@@ -41,7 +45,7 @@ describe('SubscriptionService', () => {
 
   beforeAll(() => {
     subscriptionRepository = {
-      getAll: jest.fn(),
+      getConfirmedSubscriptions: jest.fn(),
       deleteUnconfirmed: jest.fn(),
       updateByToken: jest.fn(),
       create: jest.fn(),
@@ -54,8 +58,7 @@ describe('SubscriptionService', () => {
       sendConfirmationEmail: jest.fn(),
       sendConfirmationSuccessEmail: jest.fn(),
       sendUnsubscribeSuccessEmail: jest.fn(),
-      sendGitHubReleaseEmail: jest.fn(),
-    } as jest.Mocked<EmailServiceInterface>;
+    } as jest.Mocked<SubscriptionEmailServiceInterface>;
 
     githubService = {
       isRepositoryExists: jest.fn(),
@@ -73,7 +76,7 @@ describe('SubscriptionService', () => {
     jest.resetAllMocks();
   });
 
-  describe('getAll', () => {
+  describe('getConfirmedSubscriptions', () => {
     const subscriptions = [
       createSubscription(),
       createSubscription({
@@ -83,22 +86,24 @@ describe('SubscriptionService', () => {
       }),
     ];
 
-    it('should return all subscriptions', async () => {
-      subscriptionRepository.getAll.mockResolvedValue(subscriptions);
+    it('should return all confirmed subscriptions', async () => {
+      subscriptionRepository.getConfirmedSubscriptions.mockResolvedValue(subscriptions);
 
-      const result = await subscriptionService.getAll();
+      const result = await subscriptionService.getConfirmedSubscriptions();
 
       expect(result).toEqual(subscriptions);
     });
   });
 
   describe('deleteUnconfirmed', () => {
-    it('should convert expiration time to milliseconds and pass it to repository', async () => {
+    const expirationTimeInMs = 600_000;
+
+    it('should delete unconfirmed subscriptions', async () => {
       subscriptionRepository.deleteUnconfirmed.mockResolvedValue(3);
 
-      const result = await subscriptionService.deleteUnconfirmed('10m');
+      const result = await subscriptionService.deleteUnconfirmed(expirationTimeInMs);
 
-      expect(subscriptionRepository.deleteUnconfirmed).toHaveBeenCalledWith(600000);
+      expect(subscriptionRepository.deleteUnconfirmed).toHaveBeenCalledWith(expirationTimeInMs);
       expect(result).toBe(3);
     });
   });
@@ -109,19 +114,19 @@ describe('SubscriptionService', () => {
       lastSeenTag: 'v2.0.0',
     });
 
-    it('should update last seen tag and return response dto', async () => {
+    it('should update last seen tag and return subscription', async () => {
       subscriptionRepository.updateByToken.mockResolvedValue(updatedSubscription);
+      const lastSeenTag = 'v2.0.0';
 
-      const result = await subscriptionService.updateLastSeenTagByToken(token, 'v2.0.0');
+      const result = await subscriptionService.updateLastSeenTagByToken(token, lastSeenTag);
 
       expect(subscriptionRepository.updateByToken).toHaveBeenCalledWith(token, {
-        lastSeenTag: 'v2.0.0',
+        lastSeenTag,
       });
       expect(result).toEqual({
-        email: updatedSubscription.email,
-        repo: updatedSubscription.repo,
-        confirmed: updatedSubscription.confirmed,
-        last_seen_tag: updatedSubscription.lastSeenTag,
+        ...updatedSubscription,
+        token,
+        lastSeenTag,
       });
     });
 
@@ -151,7 +156,7 @@ describe('SubscriptionService', () => {
       expect(subscriptionRepository.create).toHaveBeenCalledWith(
         {
           ...subscribeBody,
-          lastSeenTag: release.lastSeenTag,
+          lastSeenTag: release.tagName,
         },
         expect.any(String),
       );
@@ -266,8 +271,8 @@ describe('SubscriptionService', () => {
   });
 
   describe('getSubscriptionsByEmail', () => {
-    it('should return subscriptions mapped to response DTOs', async () => {
-      const subscriptions = [
+    it('should return subscriptions', async () => {
+      const subscriptions: Subscription[] = [
         createSubscription({
           id: 1,
           confirmed: true,
@@ -281,27 +286,12 @@ describe('SubscriptionService', () => {
         }),
       ];
 
-      const expected = [
-        {
-          email,
-          repo,
-          confirmed: true,
-          last_seen_tag: 'v1.0.0',
-        },
-        {
-          email,
-          repo: 'owner/second-repo',
-          confirmed: false,
-          last_seen_tag: null,
-        },
-      ];
-
       subscriptionRepository.getSubscriptionsByEmail.mockResolvedValue(subscriptions);
 
       const result = await subscriptionService.getSubscriptionsByEmail(email);
 
       expect(subscriptionRepository.getSubscriptionsByEmail).toHaveBeenCalledWith(email);
-      expect(result).toEqual(expected);
+      expect(result).toEqual(subscriptions);
     });
   });
 });

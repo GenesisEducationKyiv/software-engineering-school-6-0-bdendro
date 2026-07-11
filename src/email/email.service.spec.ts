@@ -1,3 +1,4 @@
+import { GithubRelease } from '../github/types/github-release';
 import { EMAIL } from './constants/email.const';
 import { EmailService } from './email.service';
 import { EmailProviderInterface } from './interfaces/email.provider.interface';
@@ -26,16 +27,20 @@ describe('EmailService', () => {
   let emailService: EmailService;
   let emailProvider: jest.Mocked<EmailProviderInterface>;
 
+  const appBaseUrl = 'http://localhost:3000/api';
+
   const to = 'test@example.com';
   const token = 'test-token';
   const repo = 'owner/repo';
 
-  const release = {
-    repo,
-    lastSeenTag: 'v1.2.3',
+  const release: GithubRelease = {
+    id: 1,
+    repoName: repo,
+    tagName: 'v1.2.3',
+    name: null,
     htmlUrl: 'https://github.com/owner/repo/releases/tag/v1.2.3',
     publishedAt: '2026-04-12T10:00:00.000Z',
-  } as const;
+  };
 
   const confirmTemplateHtml = '<p>confirm-template</p>';
   const confirmationSuccessTemplateHtml = '<p>confirmation-success-template</p>';
@@ -47,7 +52,7 @@ describe('EmailService', () => {
       send: jest.fn(),
     } as any;
 
-    emailService = new EmailService(emailProvider);
+    emailService = new EmailService(emailProvider, appBaseUrl);
   });
 
   beforeEach(() => {
@@ -55,7 +60,7 @@ describe('EmailService', () => {
   });
 
   describe('sendConfirmationEmail', () => {
-    const confirmationUrl = `${EMAIL.CONFIRMATION_BASE_URL}/${token}`;
+    const confirmationUrl = `${appBaseUrl}/${EMAIL.CONFIRMATION_PATH}/${token}`;
 
     it('should build confirmation url, render confirmation template and send email', async () => {
       (
@@ -74,7 +79,7 @@ describe('EmailService', () => {
   });
 
   describe('sendConfirmationSuccessEmail', () => {
-    const unsubscribeUrl = `${EMAIL.UNSUBSCRIBE_BASE_URL}/${token}`;
+    const unsubscribeUrl = `${appBaseUrl}/${EMAIL.UNSUBSCRIBE_PATH}/${token}`;
 
     it('should build unsubscribe url, render confirmation success template and send email', async () => {
       (
@@ -110,7 +115,7 @@ describe('EmailService', () => {
   });
 
   describe('sendGitHubReleaseEmail', () => {
-    const unsubscribeUrl = `${EMAIL.UNSUBSCRIBE_BASE_URL}/${token}`;
+    const unsubscribeUrl = `${appBaseUrl}/${EMAIL.UNSUBSCRIBE_PATH}/${token}`;
 
     it('should build unsubscribe url, render repo update template and send email', async () => {
       (getRepoUpdateTemplate as jest.MockedFunction<typeof getRepoUpdateTemplate>).mockReturnValue(

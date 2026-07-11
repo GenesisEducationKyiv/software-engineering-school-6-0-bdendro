@@ -1,20 +1,7 @@
-export interface GitHubRepoDto {
-  id: number;
-  full_name: string;
-  private: boolean;
-  html_url: string;
-}
-
-export interface GitHubLatestReleaseDto {
-  id: number;
-  tag_name: string;
-  name: string | null;
-  html_url: string;
-  body?: string | null;
-  published_at: string | null;
-}
+import { GithubRelease } from '../types/github-release';
+import { GithubRepository } from '../types/github-repository';
 
 export interface GithubClientInterface {
-  getRepository(repo: string): Promise<GitHubRepoDto | null>;
-  getLatestRelease(repo: string): Promise<GitHubLatestReleaseDto | null>;
+  getRepository(repo: string): Promise<GithubRepository | null>;
+  getLatestRelease(repo: string): Promise<GithubRelease | null>;
 }

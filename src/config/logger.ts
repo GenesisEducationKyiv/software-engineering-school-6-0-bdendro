@@ -1,38 +1,17 @@
-import pino from 'pino';
-import { ENV, NodeEnv } from '../common/constants/env';
-import { LOG_LEVELS_BY_ENV } from '../common/constants/logger';
+import { ENV } from '../common/constants/env';
+import { LoggerConfig } from '../common/modules/logger/interfaces/logger.interface';
+import { Env } from './env';
 
-export function createLogger(nodeEnv: NodeEnv, appName: string) {
-  const isProduction = nodeEnv === ENV.PRODUCTION;
-  const isTest = nodeEnv === ENV.TEST;
+const LOG_LEVELS_BY_ENV = {
+  [ENV.DEVELOPMENT]: 'debug',
+  [ENV.TEST]: 'error',
+  [ENV.PRODUCTION]: 'info',
+} as const;
 
-  const logLevel = isProduction
-    ? LOG_LEVELS_BY_ENV.PRODUCTION
-    : isTest
-      ? LOG_LEVELS_BY_ENV.TEST
-      : LOG_LEVELS_BY_ENV.DEVELOPMENT;
-
-  return pino({
-    name: appName,
-    timestamp: pino.stdTimeFunctions.isoTime,
-    level: logLevel,
-
-    serializers: {
-      err: pino.stdSerializers.errWithCause,
-    },
-
-    transport: isProduction
-      ? undefined
-      : {
-          target: 'pino-pretty',
-          options: {
-            colorize: true,
-            translateTime: 'UTC:yyyy-mm-dd HH:MM:ss.l o',
-            ignore: 'pid,hostname',
-            singleLine: true,
-          },
-        },
-  });
+export function createLoggerConfig(env: Env): LoggerConfig {
+  return {
+    appName: env.APP_NAME,
+    level: LOG_LEVELS_BY_ENV[env.NODE_ENV],
+    pretty: env.NODE_ENV !== ENV.PRODUCTION,
+  };
 }
-
-export type AppLogger = pino.Logger;

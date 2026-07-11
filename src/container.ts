@@ -1,5 +1,8 @@
+import ms from 'ms';
+import { AppLogger } from './common/modules/logger/interfaces/logger.interface';
+import { PinoLogger } from './common/modules/logger/pino-logger';
 import { Env } from './config/env';
-import { AppLogger, createLogger } from './config/logger';
+import { createLoggerConfig } from './config/logger';
 import { createPrismaClient, DBClient } from './config/prisma';
 import { EmailProvider } from './email/email.provider';
 import { EmailService } from './email/email.service';
@@ -8,11 +11,15 @@ import { GithubClient } from './github/github.client';
 import { GithubService } from './github/github.service';
 import { GithubClientInterface } from './github/interfaces/github.client.interface';
 import { GithubRateLimiter } from './github/utils/github-rate-limiter';
-import { GithubRepositoryReleaseJob } from './jobs/github-repo-release.job';
+import { GithubReleaseNotificationJob } from './jobs/github-repo-release.job';
 import { JobsManager } from './jobs/manager';
+import { UnconfirmedSubscriptionsCleanupJob } from './jobs/unconfirmed-subscriptions.job';
 import { SubscriptionController } from './subscriptions/subscription.controller';
 import { SubscriptionRepository } from './subscriptions/subscription.repository';
 import { SubscriptionService } from './subscriptions/subscription.service';
+import { GithubClientMapper } from './github/mappers/github-client.mapper';
+import { SubscriptionPrismaMapper } from './subscriptions/mappers/subscription-prisma.mapper';
+import { SubscriptionControllerMapper } from './subscriptions/mappers/subscription-controller.mapper';
 
 export type ContainerOverrides = Partial<{
   logger: AppLogger;
@@ -22,26 +29,33 @@ export type ContainerOverrides = Partial<{
 }>;
 
 export function createContainer(env: Env, overrides?: ContainerOverrides) {
-  const logger = overrides?.logger || createLogger(env.NODE_ENV, env.APP_NAME);
+  const logger = overrides?.logger || new PinoLogger(createLoggerConfig(env));
 
   const prisma = overrides?.prisma || createPrismaClient(env.DATABASE_URL);
 
   const emailProvider = overrides?.emailProvider || new EmailProvider(env);
-  const emailService = new EmailService(emailProvider);
+  const emailService = new EmailService(emailProvider, env.APP_BASE_URL);
 
   const githubRateLimiter = new GithubRateLimiter();
-  const githubClient = overrides?.githubClient || new GithubClient(githubRateLimiter, env);
+  const githubClientMapper = new GithubClientMapper();
+  const githubClient =
+    overrides?.githubClient || new GithubClient(githubRateLimiter, githubClientMapper, env);
   const githubService = new GithubService(githubClient);
 
-  const subscriptionRepository = new SubscriptionRepository(prisma);
+  const subscriptionRepositoryMapper = new SubscriptionPrismaMapper();
+  const subscriptionRepository = new SubscriptionRepository(prisma, subscriptionRepositoryMapper);
   const subscriptionService = new SubscriptionService(
     subscriptionRepository,
     emailService,
     githubService,
   );
-  const subscriptionController = new SubscriptionController(subscriptionService);
+  const subscriptionControllerMapper = new SubscriptionControllerMapper();
+  const subscriptionController = new SubscriptionController(
+    subscriptionService,
+    subscriptionControllerMapper,
+  );
 
-  const githubRepositoryReleaseJob = new GithubRepositoryReleaseJob(
+  const githubRepositoryReleaseJob = new GithubReleaseNotificationJob(
     githubService,
     subscriptionService,
     emailService,
@@ -49,7 +63,18 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
     logger,
   );
 
-  const jobsManager = new JobsManager(githubRepositoryReleaseJob, subscriptionService, logger);
+  const unconfirmedSubscriptionsCleanupJob = new UnconfirmedSubscriptionsCleanupJob(
+    logger,
+    subscriptionService,
+    ms(env.UNCONFIRMED_EXPIRATION_TIME as ms.StringValue),
+  );
+
+  const jobsManager = new JobsManager(
+    githubRepositoryReleaseJob,
+    unconfirmedSubscriptionsCleanupJob,
+    logger,
+    env,
+  );
 
   return {
     logger,

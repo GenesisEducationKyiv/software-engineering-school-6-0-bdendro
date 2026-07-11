@@ -1,16 +1,15 @@
-import { GithubReleaseResponseInterface } from '../../github/dto/github.response.dto';
+import { GithubRelease } from '../../github/types/github-release';
 
-export function getRepoUpdateTemplate(
-  release: GithubReleaseResponseInterface,
-  unsubscribeUrl: string,
-) {
+export function getRepoUpdateTemplate(release: GithubRelease, unsubscribeUrl: string) {
   return `
     <html>
       <body>
-      <h2>New release in <b>${release.repo}</b></h2>
-        <p>A new release has been published for the GitHub repository <b>${release.repo}</b>.</p>
-        <p>The latest release tag is <b>${release.lastSeenTag}</b> ${
-          release.publishedAt ? ` and it was published at ${release.publishedAt}` : ''
+      <h2>New release in <b>${release.repoName}</b></h2>
+        <p>A new release has been published for the GitHub repository <b>${release.repoName}</b>.</p>
+        <p>The latest release tag is <b>${release.tagName}</b> ${
+          release.publishedAt
+            ? ` and it was published at ${new Date(release.publishedAt).toUTCString()}`
+            : ''
         }. You can view the release details <a href="${release.htmlUrl}">here</a>.</p>
         <p>Stay tuned for future updates.</p>
         <p style="font-size: 12px; color: #999; text-align: center; margin-top: 40px;">

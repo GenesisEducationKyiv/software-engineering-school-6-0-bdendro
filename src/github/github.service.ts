@@ -1,6 +1,6 @@
-import { GithubReleaseResponseInterface } from './dto/github.response.dto';
 import { GithubClientInterface } from './interfaces/github.client.interface';
 import { GithubServiceInterface } from './interfaces/github.service.interface';
+import { GithubRelease } from './types/github-release';
 
 export class GithubService implements GithubServiceInterface {
   constructor(private readonly githubClient: GithubClientInterface) {}
@@ -11,14 +11,7 @@ export class GithubService implements GithubServiceInterface {
     return true;
   }
 
-  async getLastRelease(repo: string): Promise<GithubReleaseResponseInterface | null> {
-    const release = await this.githubClient.getLatestRelease(repo);
-    if (!release) return null;
-    return {
-      repo,
-      lastSeenTag: release.tag_name,
-      htmlUrl: release.html_url,
-      publishedAt: release.published_at,
-    };
+  async getLastRelease(repo: string): Promise<GithubRelease | null> {
+    return this.githubClient.getLatestRelease(repo);
   }
 }

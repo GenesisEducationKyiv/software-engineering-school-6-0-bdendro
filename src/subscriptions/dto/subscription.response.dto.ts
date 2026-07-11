@@ -1,4 +1,4 @@
-export interface SubscriptionResponseDTO {
+export interface SubscriptionResponse {
   email: string;
   repo: string;
   confirmed: boolean;

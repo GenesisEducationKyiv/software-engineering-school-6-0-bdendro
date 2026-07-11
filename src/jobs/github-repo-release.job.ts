@@ -1,19 +1,16 @@
+import { AppLogger } from '../common/modules/logger/interfaces/logger.interface';
 import { ConflictError, GithubError, NotFoundError } from '../common/utils/errors/custom-errors';
-import { AppLogger } from '../config/logger';
-import { EmailServiceInterface } from '../email/interfaces/email.service.interface';
+import { GithubReleaseEmailServiceInterface } from '../email/interfaces/github-release-email.service.interface';
 import { GithubServiceInterface } from '../github/interfaces/github.service.interface';
 import { GithubRateLimiterInterface } from '../github/utils/github-rate-limiter';
 import { SubscriptionServiceInterface } from '../subscriptions/interfaces/subscription.service.interface';
+import { JobInterface } from './interfaces/job.interface';
 
-export interface GithubRepositoryReleaseJobInterface {
-  run(): Promise<void>;
-}
-
-export class GithubRepositoryReleaseJob implements GithubRepositoryReleaseJobInterface {
+export class GithubReleaseNotificationJob implements JobInterface {
   constructor(
     private readonly githubService: GithubServiceInterface,
     private readonly subscriptionService: SubscriptionServiceInterface,
-    private readonly emailService: EmailServiceInterface,
+    private readonly emailService: GithubReleaseEmailServiceInterface,
     private readonly githubRateLimiter: GithubRateLimiterInterface,
     private readonly logger: AppLogger,
   ) {}
@@ -34,7 +31,7 @@ export class GithubRepositoryReleaseJob implements GithubRepositoryReleaseJobInt
   }
 
   private async checkReleasesAndNotifySubscribers(): Promise<void> {
-    const subscriptions = await this.subscriptionService.getAll();
+    const subscriptions = await this.subscriptionService.getConfirmedSubscriptions();
     for (const sub of subscriptions) {
       if (this.githubRateLimiter.isBlocked()) {
         throw new GithubError(
@@ -45,10 +42,10 @@ export class GithubRepositoryReleaseJob implements GithubRepositoryReleaseJobInt
       }
       try {
         const release = await this.githubService.getLastRelease(sub.repo);
-        if (release !== null && release.lastSeenTag !== sub.lastSeenTag) {
+        if (release !== null && release.tagName !== sub.lastSeenTag) {
           await this.emailService.sendGitHubReleaseEmail(sub.email, release, sub.token);
           try {
-            await this.subscriptionService.updateLastSeenTagByToken(sub.token, release.lastSeenTag);
+            await this.subscriptionService.updateLastSeenTagByToken(sub.token, release.tagName);
           } catch (err) {
             if (err instanceof ConflictError || err instanceof NotFoundError)
               this.logger.info({ err }, 'Error while trying to update last_seen_tag');

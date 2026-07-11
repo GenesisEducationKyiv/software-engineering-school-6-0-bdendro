@@ -1,5 +1,7 @@
 import { GithubService } from './github.service';
 import { GithubClientInterface } from './interfaces/github.client.interface';
+import { GithubRelease } from './types/github-release';
+import { GithubRepository } from './types/github-repository';
 
 describe('GithubService', () => {
   let githubService: GithubService;
@@ -7,21 +9,21 @@ describe('GithubService', () => {
 
   const repo = 'owner/repo';
 
-  const githubRepo = {
+  const githubRepo: GithubRepository = {
     id: 1,
-    full_name: 'full_name',
+    repoName: 'repo_name',
     private: false,
-    html_url: 'html_url',
-  } as const;
+    htmlUrl: 'html_url',
+  };
 
-  const githubRelease = {
+  const githubRelease: GithubRelease = {
     id: 1,
-    tag_name: 'tag_name',
+    repoName: 'repo_name',
+    tagName: 'tag_name',
     name: 'name',
-    html_url: 'html_url',
-    body: 'body',
-    published_at: 'published_at',
-  } as const;
+    htmlUrl: 'html_url',
+    publishedAt: 'published_at',
+  };
 
   beforeAll(() => {
     githubClient = {
@@ -66,19 +68,13 @@ describe('GithubService', () => {
       expect(result).toBeNull();
     });
 
-    it('should map latest release data to service response DTO', async () => {
+    it('should return latest release', async () => {
       githubClient.getLatestRelease.mockResolvedValue(githubRelease);
-      const expected = {
-        repo,
-        lastSeenTag: githubRelease.tag_name,
-        htmlUrl: githubRelease.html_url,
-        publishedAt: githubRelease.published_at,
-      };
 
       const result = await githubService.getLastRelease(repo);
 
       expect(githubClient.getLatestRelease).toHaveBeenCalledWith(repo);
-      expect(result).toEqual(expected);
+      expect(result).toEqual(githubRelease);
     });
   });
 });
