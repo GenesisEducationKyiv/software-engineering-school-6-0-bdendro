@@ -2,11 +2,10 @@ import type {
   GithubLatestReleaseApiResponse,
   GithubRepositoryApiResponse,
 } from '../dto/github-api.response.dto';
-import type { GithubClientMapperInterface } from '../interfaces/github.mapper.interface';
 import type { GithubRelease } from '../types/github-release';
 import type { GithubRepository } from '../types/github-repository';
 
-export class GithubClientMapper implements GithubClientMapperInterface {
+export class GithubClientMapper {
   toRepository(repository: GithubRepositoryApiResponse): GithubRepository {
     return {
       id: repository.id,

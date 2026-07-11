@@ -1,8 +1,7 @@
 import { Subscription as PrismaSubscription } from '../../generated/prisma/client';
-import { SubscriptionPrismaMapperInterface } from '../interfaces/subscription.mapper.interface';
 import { Subscription } from '../types/subscription';
 
-export class SubscriptionPrismaMapper implements SubscriptionPrismaMapperInterface {
+export class SubscriptionPrismaMapper {
   toSubscription(prismaSubscription: PrismaSubscription): Subscription;
   toSubscription(prismaSubscription: PrismaSubscription | null): Subscription | null;
   toSubscription(prismaSubscription: PrismaSubscription | null): Subscription | null {

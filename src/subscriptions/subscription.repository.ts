@@ -8,12 +8,12 @@ import {
   SubscriptionRepositoryInterface,
 } from './interfaces/subscription.repository.interface';
 import { SubscriptionUpdateInput } from './types/subscription-repository';
-import { SubscriptionPrismaMapperInterface } from './interfaces/subscription.mapper.interface';
+import { SubscriptionPrismaMapper } from './mappers/subscription-prisma.mapper';
 
 export class SubscriptionRepository implements SubscriptionRepositoryInterface {
   constructor(
     private readonly prisma: PrismaClient,
-    private readonly mapper: SubscriptionPrismaMapperInterface,
+    private readonly mapper: SubscriptionPrismaMapper,
   ) {}
 
   async getConfirmedSubscriptions(): Promise<Subscription[]> {
