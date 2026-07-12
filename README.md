@@ -75,16 +75,40 @@ cp .env.example .env
 
 Then **manually update** the required values in `.env`.
 
+Create the Docker network:
+
+```bash
+docker network create backend-net
+```
+
 Start the application:
 
 ```bash
 docker compose up --build
 ```
 
-Stop and remove containers:
+Start the observability stack:
+
+```bash
+docker compose -f docker-compose.observability.yml up --build
+```
+
+Stop and remove application containers:
 
 ```bash
 docker compose down -v
+```
+
+Stop and remove observability containers:
+
+```bash
+docker compose -f docker-compose.observability.yml down -v
+```
+
+Remove the Docker network:
+
+```bash
+docker network rm backend-net
 ```
 
 ---
