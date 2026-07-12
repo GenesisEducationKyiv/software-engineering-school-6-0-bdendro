@@ -31,7 +31,7 @@ export function createApp(container: AppContainer): Application {
 
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-  app.use((_req: Request, res: Response, _next: NextFunction) => {
+  app.use(httpMetrics, (_req: Request, res: Response, _next: NextFunction) => {
     res.status(404).json({ message: 'Not Found' });
   });
 
