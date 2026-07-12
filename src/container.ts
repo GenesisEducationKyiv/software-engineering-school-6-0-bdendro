@@ -20,6 +20,7 @@ import { SubscriptionService } from './subscriptions/subscription.service';
 import { GithubClientMapper } from './github/mappers/github-client.mapper';
 import { SubscriptionPrismaMapper } from './subscriptions/mappers/subscription-prisma.mapper';
 import { SubscriptionControllerMapper } from './subscriptions/mappers/subscription-controller.mapper';
+import { MetricsController } from './metrics/metrics.controller';
 
 export type ContainerOverrides = Partial<{
   logger: AppLogger;
@@ -55,6 +56,8 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
     subscriptionControllerMapper,
   );
 
+  const metricsController = new MetricsController();
+
   const githubRepositoryReleaseJob = new GithubReleaseNotificationJob(
     githubService,
     subscriptionService,
@@ -82,7 +85,7 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
     emailProvider,
     githubRateLimiter,
     jobsManager,
-    controllers: { subscriptionController },
+    controllers: { subscriptionController, metricsController },
     services: { subscriptionService, emailService, githubService },
   };
 }

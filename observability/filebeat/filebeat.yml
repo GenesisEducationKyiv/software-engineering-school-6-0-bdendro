@@ -1,0 +1,32 @@
+filebeat.inputs:
+  - type: filestream
+    id: app-docker-logs
+    paths:
+      - /var/lib/docker/containers/*/*.log
+    parsers:
+      - container:
+          format: docker
+
+processors:
+  - add_docker_metadata:
+      host: 'unix:///var/run/docker.sock'
+
+  - drop_event:
+      when:
+        not:
+          equals:
+            container.labels.com_docker_compose_service: app
+
+  - decode_json_fields:
+      fields: ['message']
+      target: ''
+      overwrite_keys: true
+
+output.elasticsearch:
+  hosts: ['elasticsearch:9200']
+  indices:
+    - index: 'github-release-tracker-logs-%{[agent.version]}-%{+yyyy.MM.dd}'
+
+setup.ilm.enabled: false
+setup.template.name: 'github-release-tracker-logs'
+setup.template.pattern: 'github-release-tracker-logs-*'
