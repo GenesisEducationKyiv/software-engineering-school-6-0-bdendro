@@ -4,7 +4,7 @@ import { ENV, ENV_FILES } from '../common/constants/env';
 import ms from 'ms';
 
 const ENV_FILE_PATH = process.env.NODE_ENV === ENV.TEST ? ENV_FILES.TEST : ENV_FILES.ENV;
-dotenv.config({ path: ENV_FILE_PATH });
+dotenv.config({ path: ENV_FILE_PATH, quiet: true });
 
 const envSchema = z.object({
   NODE_ENV: z.enum([ENV.DEVELOPMENT, ENV.TEST, ENV.PRODUCTION]).default(ENV.DEVELOPMENT),
@@ -12,6 +12,7 @@ const envSchema = z.object({
   APP_NAME: z.string().trim().min(1),
   APP_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   APP_BASE_URL: z.url({ protocol: /^https?$/ }),
+  APP_CLIENT_BASE_URL: z.url({ protocol: /^https?$/ }),
   APP_TIMEZONE: z
     .string()
     .trim()

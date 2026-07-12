@@ -4,7 +4,14 @@ import { AppContainer } from './container';
 import { createRouter } from './routes';
 import { createErrorHandler } from './common/middlewares/error-handler';
 import helmet from 'helmet';
-import swaggerDocument from '../docs/swagger.json';
+import path, { join } from 'node:path';
+import { readFileSync } from 'node:fs';
+
+const swaggerDocumentPath = join(__dirname, '..', 'docs', 'swagger.json');
+const swaggerDocument = JSON.parse(readFileSync(swaggerDocumentPath, 'utf8')) as Record<
+  string,
+  unknown
+>;
 
 export function createApp(container: AppContainer): Application {
   const app = express();
@@ -13,6 +20,8 @@ export function createApp(container: AppContainer): Application {
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  app.use(express.static(path.join(__dirname, '..', 'public')));
 
   app.use('/api', createRouter(container.controllers));
 

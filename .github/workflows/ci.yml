@@ -6,9 +6,28 @@ on:
   pull_request:
     branches: ['main']
 
+env:
+  NODE_ENV: test
+
+  APP_NAME: ${{ vars.APP_NAME }}
+  APP_BASE_URL: ${{ vars.TEST_APP_BASE_URL }}
+  APP_CLIENT_BASE_URL: ${{vars.TEST_APP_CLIENT_BASE_URL}}
+  APP_TIMEZONE: ${{ vars.APP_TIMEZONE }}
+
+  DATABASE_URL: ${{vars.TEST_DATABASE_URL}}
+
+  EMAIL: ${{ secrets.TEST_EMAIL_USER }}
+  EMAIL_PASSWORD: ${{ secrets.TEST_EMAIL_PASSWORD }}
+  EMAIL_HOST: ${{ vars.TEST_EMAIL_HOST }}
+  EMAIL_PORT: ${{ vars.TEST_EMAIL_PORT }}
+  EMAIL_SECURE: ${{ vars.TEST_EMAIL_SECURE }}
+
+  GITHUB_API_URL: ${{ vars.TEST_GH_API_URL }}
+  GITHUB_TOKEN: ${{ secrets.TEST_GH_TOKEN }}
+
 jobs:
-  check-and-build:
-    name: Check and Build
+  quality:
+    name: Quality Checks
     runs-on: ubuntu-latest
 
     strategy:
@@ -17,10 +36,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
@@ -37,57 +56,26 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Build project
         run: npm run build
 
-  tests:
-    name: Tests
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
-    needs: check-and-build
+    needs: quality
 
     strategy:
       matrix:
         node-version: [22.x]
-
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: github_release_subscription_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres -d github_release_subscription_test"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
-    env:
-      NODE_ENV: test
-
-      APP_NAME: ${{ vars.APP_NAME }}
-      APP_BASE_URL: ${{ vars.APP_BASE_URL }}
-      APP_TIMEZONE: ${{ vars.APP_TIMEZONE }}
-
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/github_release_subscription_test
-
-      EMAIL: ${{ secrets.EMAIL_USER }}
-      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-      EMAIL_HOST: ${{ vars.EMAIL_HOST }}
-      EMAIL_PORT: ${{ vars.EMAIL_PORT }}
-      EMAIL_SECURE: ${{ vars.EMAIL_SECURE }}
-
-      GITHUB_API_URL: ${{ vars.GH_API_URL }}
-      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
@@ -98,8 +86,41 @@ jobs:
       - name: Generate prisma client
         run: npm run generate:prisma
 
-      - name: Run database migrations
-        run: npm run migrate:prod
+      - name: Run unit tests
+        run: npm run test:unit
 
-      - name: Run tests
-        run: npm run test
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run integration tests in Docker
+        run: docker compose -f docker-compose.test.yml run --rm --build test-int
+
+      - name: Cleanup Docker test infrastructure
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v
+
+  e2e-tests:
+    name: End-to-end Tests
+    runs-on: ubuntu-latest
+    needs: integration-tests
+
+    env:
+      WIREMOCK_URL: ${{vars.TEST_WIREMOCK_URL}}
+      MAILPIT_URL: ${{vars.TEST_MAILPIT_URL}}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run e2e tests in Docker
+        run: docker compose -f docker-compose.test.yml run --rm --build test-e2e
+
+      - name: Cleanup Docker test infrastructure
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v

@@ -1,0 +1,99 @@
+services:
+  db-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: github_subscription_api_test
+    ports:
+      - '5437:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      target: migration
+    depends_on:
+      db-test:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db-test:5432/github_subscription_api_test?schema=public
+
+  wiremock:
+    image: wiremock/wiremock:3.13.2
+    command: ['--verbose']
+    ports:
+      - '8080:8080'
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - '8025:8025'
+      - '1025:1025'
+
+  test-unit:
+    build:
+      context: .
+      target: test-unit
+
+  test-int:
+    build:
+      context: .
+      target: test-int
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - path: .env.test
+        required: false
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      APP_NAME: ${APP_NAME}
+      APP_BASE_URL: ${APP_BASE_URL}
+      APP_CLIENT_BASE_URL: ${APP_CLIENT_BASE_URL}
+      APP_TIMEZONE: ${APP_TIMEZONE}
+      DATABASE_URL: postgresql://postgres:postgres@db-test:5432/github_subscription_api_test?schema=public
+      EMAIL: ${EMAIL}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_PORT: ${EMAIL_PORT}
+      EMAIL_SECURE: ${EMAIL_SECURE}
+      GITHUB_API_URL: ${GITHUB_API_URL}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+
+  test-e2e:
+    build:
+      context: .
+      dockerfile: Dockerfile.e2e
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      wiremock:
+        condition: service_started
+      mailpit:
+        condition: service_started
+    env_file:
+      - path: .env.test
+        required: false
+    environment:
+      NODE_ENV: test
+      APP_NAME: ${APP_NAME}
+      APP_BASE_URL: http://localhost:3000/api
+      APP_CLIENT_BASE_URL: ${APP_CLIENT_BASE_URL}
+      APP_TIMEZONE: ${APP_TIMEZONE}
+      DATABASE_URL: postgresql://postgres:postgres@db-test:5432/github_subscription_api_test?schema=public
+      EMAIL: ${EMAIL}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      EMAIL_HOST: mailpit
+      EMAIL_PORT: 1025
+      EMAIL_SECURE: 'false'
+      GITHUB_API_URL: http://wiremock:8080
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      WIREMOCK_URL: http://wiremock:8080
+      MAILPIT_URL: http://mailpit:8025

@@ -4,7 +4,6 @@ import {
   EmailProviderVerificationResult,
   SendEmailOptions,
 } from './interfaces/email.provider.interface';
-import type { Env } from '../config/env';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 import {
   EMAIL_ERROR_AUTH_CODES,
@@ -14,22 +13,32 @@ import {
 import { isNodemailerErrorLike } from './utils/error';
 import { EmailServiceError } from '../common/utils/errors/custom-errors';
 
+interface EmailProviderOptions {
+  EMAIL: string;
+  EMAIL_PASSWORD: string;
+  EMAIL_HOST: string;
+  EMAIL_PORT: number;
+  EMAIL_SECURE: boolean;
+
+  APP_NAME: string;
+}
+
 export class EmailProvider implements EmailProviderInterface {
   private readonly transporter: Transporter;
 
-  constructor(env: Env) {
+  constructor(options: EmailProviderOptions) {
     const transportOptions: SMTPTransport.Options = {
-      host: env.EMAIL_HOST,
-      port: env.EMAIL_PORT,
-      secure: env.EMAIL_SECURE,
+      host: options.EMAIL_HOST,
+      port: options.EMAIL_PORT,
+      secure: options.EMAIL_SECURE,
       auth: {
-        user: env.EMAIL,
-        pass: env.EMAIL_PASSWORD,
+        user: options.EMAIL,
+        pass: options.EMAIL_PASSWORD,
       },
     };
 
     this.transporter = createTransport(transportOptions, {
-      from: `"${env.APP_NAME}" <${env.EMAIL}>`,
+      from: `"${options.APP_NAME}" <${options.EMAIL}>`,
     });
   }
 
