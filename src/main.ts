@@ -1,3 +1,4 @@
+import { promisify } from 'node:util';
 import { env } from './config/env';
 import { createApp } from './app';
 import { createContainer } from './container';
@@ -22,12 +23,17 @@ async function bootstrap() {
 
   async function shutdown() {
     logger.info('Shutting down...');
-    server.close();
+    const closeServer = promisify(server.close.bind(server));
+    await closeServer();
+    logger.info('HTTP server closed.');
+
+    await container.jobsManager.stopJobs();
+
+    await container.rabbitMqConnection.close();
+    logger.info(`RabbitMQ connection successfully closed.`);
 
     await container.prisma.$disconnect();
     logger.info('Prisma connection closed successfully.');
-
-    await container.jobsManager.stopJobs();
 
     logger.info('Application shut down successfully.');
     process.exit(0);

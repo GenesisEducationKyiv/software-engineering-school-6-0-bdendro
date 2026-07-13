@@ -2,7 +2,7 @@ import axios, { type AxiosInstance } from 'axios';
 import { GithubRelease } from '../../modules/github';
 import { RepositoryReleaseNotificationSenderInterface } from './interfaces/repository-release-email.sender.interface';
 import { SubscriptionNotificationSenderInterface } from './interfaces/subscription-email.service.interface';
-import { NotificationClientMapper } from './notification.mapper';
+import { SubscriptionProducerMapper } from '../../modules/subscription/mappers/subscription-producer.mapper';
 import {
   MessageResponse,
   SendConfirmationBody,
@@ -28,7 +28,7 @@ export class NotificationClient
 
   constructor(
     options: Options,
-    private readonly mapper: NotificationClientMapper,
+    private readonly mapper: SubscriptionProducerMapper,
   ) {
     this.client = axios.create({ timeout: 5_000, baseURL: options.NOTIFICATION_SERVICE_URL });
   }

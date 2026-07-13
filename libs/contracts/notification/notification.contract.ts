@@ -5,7 +5,7 @@ import {
   nullableTrimmedStringSchema,
   repoSchema,
   urlSchema,
-} from './common.schema';
+} from '../../common/utils/validation/common.schema';
 import { MessageResponse, ValidationErrorResponse } from '../../common/types/response';
 
 // Response

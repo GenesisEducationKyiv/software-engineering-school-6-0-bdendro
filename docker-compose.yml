@@ -17,6 +17,24 @@ services:
       timeout: 3s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: app
+      RABBITMQ_DEFAULT_PASS: app
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    networks:
+      - backend-net
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   migrate:
     build:
       context: .
@@ -36,11 +54,15 @@ services:
       target: production
     ports:
       - '${NOTIFICATION_PORT:-3002}:3002'
+    depends_on:
+      rabbitmq:
+        condition: service_started
     env_file:
       - path: .env
     environment:
       NODE_ENV: production
       NOTIFICATION_PORT: 3002
+      RABBITMQ_URL: amqp://app:app@rabbitmq:5672
     logging:
       options:
         max-size: '10m'
@@ -57,14 +79,17 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      rabbitmq:
+        condition: service_started
       notification:
         condition: service_started
     env_file:
       - path: .env
     environment:
+      NODE_ENV: production
       DATABASE_URL: postgresql://postgres:postgres@db:5432/github_subscription_api?schema=public
       NOTIFICATION_SERVICE_URL: http://notification:3002
-      NODE_ENV: production
+      RABBITMQ_URL: amqp://app:app@rabbitmq:5672
     logging:
       options:
         max-size: '10m'
@@ -74,6 +99,8 @@ services:
 
 volumes:
   pgdata:
+  rabbitmqdata:
 
 networks:
   backend-net:
+    external: true

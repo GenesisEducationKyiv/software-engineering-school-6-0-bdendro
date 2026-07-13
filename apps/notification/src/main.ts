@@ -1,3 +1,4 @@
+import { promisify } from 'node:util';
 import { PinoLogger } from '../../../libs/infrastructure/logger/pino-logger';
 import { createApp } from './app';
 import { env } from './config/config';
@@ -13,7 +14,7 @@ async function bootstrap() {
 
   const emailVerification = await container.emailProvider.verifyTransporter();
   if (!emailVerification.ok) {
-    if (emailVerification.kind !== EMAIL_VERIFICATION_ERROR_KIND.AUTH)
+    if (emailVerification.kind === EMAIL_VERIFICATION_ERROR_KIND.AUTH)
       throw new Error('SMTP authentication failed. Check email credentials.', {
         cause: emailVerification.error,
       });
@@ -32,9 +33,18 @@ async function bootstrap() {
     logger.info(`Server is listening on port ${env.NOTIFICATION_PORT}`);
   });
 
-  function shutdown() {
+  await container.consumerManager.start();
+
+  async function shutdown() {
     logger.info('Shutting down...');
-    server.close();
+    const closeServer = promisify(server.close.bind(server));
+    await closeServer();
+    logger.info('HTTP server closed.');
+
+    await container.consumerManager.stop();
+
+    await container.rabbitMqConnection.close();
+    logger.info(`RabbitMQ connection successfully closed.`);
 
     container.emailProvider.closeConnection();
     logger.info('SMTP connection closed successfully.');
@@ -44,21 +54,17 @@ async function bootstrap() {
   }
 
   process.on('SIGINT', () => {
-    try {
-      shutdown();
-    } catch (err) {
+    shutdown().catch((err: unknown) => {
       logger.fatal({ err }, 'Shutdown failed.');
       process.exit(1);
-    }
+    });
   });
 
   process.on('SIGTERM', () => {
-    try {
-      shutdown();
-    } catch (err) {
+    shutdown().catch((err: unknown) => {
       logger.fatal({ err }, 'Shutdown failed.');
       process.exit(1);
-    }
+    });
   });
 }
 

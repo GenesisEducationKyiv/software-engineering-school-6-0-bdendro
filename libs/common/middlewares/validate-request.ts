@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import type { ZodType } from 'zod';
 import { ValidationError, ValidationErrorDetail } from '../utils/errors/custom-errors';
 import { ValidatedRequest } from '../types/validated-request';
+import { mapValidationErrorDetails } from '../utils/validation/map-validation-error-details';
 
 const requestParts = ['body', 'params', 'query'] as const;
 
@@ -26,12 +27,7 @@ export function validateRequest(schemas: RequestSchemas) {
       const result = schema.safeParse(req[part]);
 
       if (!result.success) {
-        details.push(
-          ...result.error.issues.map((issue) => {
-            return { path: issue.path.map((pathEl) => pathEl.toString()), message: issue.message };
-          }),
-        );
-
+        details.push(...mapValidationErrorDetails(result.error));
         continue;
       }
 
