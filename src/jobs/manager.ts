@@ -2,15 +2,16 @@ import cron, { ScheduledTask } from 'node-cron';
 import { SCHEDULE } from './constants/schedule.const';
 import type { Env } from '../config/env';
 import { AppLogger } from '../../libs/infrastructure/logger/interfaces/logger.interface';
-import { JobInterface } from './interfaces/job.interface';
+import { GithubReleaseNotificationJob } from '../modules/subscription/jobs/github-repo-release.job';
+import { UnconfirmedSubscriptionsCleanupJob } from '../modules/subscription/jobs/unconfirmed-subscriptions.job';
 
 export class JobsManager {
   private githubReleaseNotificationTask?: ScheduledTask;
   private unconfirmedSubscriptionsCleanupTask?: ScheduledTask;
 
   constructor(
-    private readonly githubReleaseNotificationJob: JobInterface,
-    private readonly unconfirmedSubscriptionsCleanupJob: JobInterface,
+    private readonly githubReleaseNotificationJob: GithubReleaseNotificationJob,
+    private readonly unconfirmedSubscriptionsCleanupJob: UnconfirmedSubscriptionsCleanupJob,
     private readonly logger: AppLogger,
     private readonly env: Env,
   ) {}

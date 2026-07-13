@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { SUBSCRIPTION_ROUTE_PATHS } from '../constants/subscriptions.const';
 
-const emailSchema = z.string().trim().toLowerCase().pipe(z.email());
+const emailSchema = z.string().trim().toLowerCase().max(254).pipe(z.email());
 
 export const subscribeBodySchema = z.strictObject({
   email: emailSchema,
@@ -9,6 +9,7 @@ export const subscribeBodySchema = z.strictObject({
     .string()
     .trim()
     .toLowerCase()
+    .max(140)
     .regex(/^[^/\s]+\/[^/\s]+$/, 'Repository must be in owner/repo format'),
 });
 

@@ -1,8 +1,7 @@
 import { SubscriptionResponse } from '../dto/subscription.response.dto';
-import { SubscriptionControllerMapperInterface } from '../interfaces/subscription.mapper.interface';
 import { Subscription } from '../types/subscription';
 
-export class SubscriptionControllerMapper implements SubscriptionControllerMapperInterface {
+export class SubscriptionControllerMapper {
   toSubscriptionResponse(subscription: Subscription): SubscriptionResponse {
     return {
       email: subscription.email,

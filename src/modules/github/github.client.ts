@@ -11,14 +11,14 @@ import {
   GithubRepositoryApiResponse,
 } from './dto/github-api.response.dto';
 import { GithubRelease } from './types/github-release';
-import { GithubClientMapperInterface } from './interfaces/github.mapper.interface';
+import { GithubClientMapper } from './mappers/github-client.mapper';
 
 export class GithubClient implements GithubClientInterface {
   private readonly client: AxiosInstance;
 
   constructor(
     private readonly rateLimiter: GithubRateLimiterInterface,
-    private readonly mapper: GithubClientMapperInterface,
+    private readonly mapper: GithubClientMapper,
     env: Env,
   ) {
     this.client = axios.create({
