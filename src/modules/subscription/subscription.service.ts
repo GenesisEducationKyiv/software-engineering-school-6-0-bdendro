@@ -18,7 +18,7 @@ export class SubscriptionService implements SubscriptionServiceInterface {
   ) {}
 
   async getConfirmedSubscriptions(): Promise<Subscription[]> {
-    return await this.subscriptionRepository.getConfirmedSubscriptions();
+    return this.subscriptionRepository.getConfirmedSubscriptions();
   }
 
   async deleteUnconfirmed(expirationTimeInMs: number): Promise<number> {

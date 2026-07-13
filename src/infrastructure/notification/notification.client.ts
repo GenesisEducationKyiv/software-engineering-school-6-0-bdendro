@@ -101,7 +101,10 @@ export class NotificationClient
 
   private hasServiceName(data: unknown): data is { serviceName: string } {
     return (
-      typeof data === 'object' && data !== null && 'serviceName' in data && typeof data === 'string'
+      typeof data === 'object' &&
+      data !== null &&
+      'serviceName' in data &&
+      typeof data.serviceName === 'string'
     );
   }
 }

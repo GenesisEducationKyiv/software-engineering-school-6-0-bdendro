@@ -42,6 +42,7 @@ export function createErrorHandler(logger: AppLogger) {
     if (err instanceof ExternalServiceError) {
       res.status(503).json({ message: err.message, serviceName: err.serviceName });
       logger.warn({ err }, 'External service error');
+      return;
     } else if (err.statusCode >= 500) {
       logger.error({ err }, 'Internal error');
     }
