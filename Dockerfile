@@ -21,7 +21,7 @@ FROM deps AS migration
 
 COPY . .
 
-CMD ["npx", "prisma", "migrate", "deploy"]
+CMD ["npm", "run", "migrate:prod"]
 
 # --- Build stage ---
 FROM deps AS build
@@ -51,8 +51,9 @@ ENV NODE_ENV=production
 
 RUN npm ci --omit=dev
 
-COPY --from=build /app/dist ./dist
+COPY --from=build /app/dist/src ./dist/src
+COPY --from=build /app/dist/libs ./dist/libs
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "node dist/main.js"]
+CMD ["sh", "-c", "npm run start:prod"]

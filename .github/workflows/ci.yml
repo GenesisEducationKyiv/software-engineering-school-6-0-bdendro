@@ -4,7 +4,7 @@ on:
   push:
     branches: ['main']
   pull_request:
-    branches: ['main']
+    branches: ['**'] # main
 
 env:
   NODE_ENV: test
@@ -59,8 +59,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Build project
+      - name: Build main API
         run: npm run build
+
+      - name: Build modular monolith
+        run: npm run build:notification
 
   unit-tests:
     name: Unit Tests

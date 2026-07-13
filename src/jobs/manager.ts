@@ -1,9 +1,9 @@
 import cron, { ScheduledTask } from 'node-cron';
 import { SCHEDULE } from './constants/schedule.const';
 import type { Env } from '../config/env';
-import { AppLogger } from '../common/modules/logger/interfaces/logger.interface';
-import { GithubReleaseNotificationJob } from './github-repo-release.job';
-import { UnconfirmedSubscriptionsCleanupJob } from './unconfirmed-subscriptions.job';
+import { AppLogger } from '../../libs/infrastructure/logger/interfaces/logger.interface';
+import { GithubReleaseNotificationJob } from '../modules/subscription/jobs/github-repo-release.job';
+import { UnconfirmedSubscriptionsCleanupJob } from '../modules/subscription/jobs/unconfirmed-subscriptions.job';
 
 export class JobsManager {
   private githubReleaseNotificationTask?: ScheduledTask;

@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
-import { ENV, ENV_FILES } from '../common/constants/env';
+import { ENV, ENV_FILES } from '../../libs/common/constants/env';
 import ms from 'ms';
 
 const ENV_FILE_PATH = process.env.NODE_ENV === ENV.TEST ? ENV_FILES.TEST : ENV_FILES.ENV;
@@ -28,15 +28,7 @@ const envSchema = z.object({
 
   DATABASE_URL: z.url({ normalize: true }).min(1),
 
-  EMAIL: z.email(),
-  EMAIL_PASSWORD: z.string().min(1),
-  EMAIL_HOST: z.string().trim().min(1),
-  EMAIL_PORT: z.coerce.number().int().min(1).max(65535),
-  EMAIL_SECURE: z.stringbool({
-    truthy: ['true'],
-    falsy: ['false'],
-    error: 'EMAIL_SECURE must be "true" or "false"',
-  }),
+  NOTIFICATION_SERVICE_URL: z.url({ protocol: /^https?$/ }),
 
   GITHUB_TOKEN: z.string().trim().min(1),
   GITHUB_API_URL: z.url({ protocol: /^https?$/ }),

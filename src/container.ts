@@ -1,31 +1,35 @@
 import ms from 'ms';
-import { AppLogger } from './common/modules/logger/interfaces/logger.interface';
-import { PinoLogger } from './common/modules/logger/pino-logger';
+import { AppLogger } from '../libs/infrastructure/logger/interfaces/logger.interface';
+import { PinoLogger } from '../libs/infrastructure/logger/pino-logger';
 import { Env } from './config/env';
-import { createLoggerConfig } from './config/logger';
-import { createPrismaClient, DBClient } from './config/prisma';
-import { EmailProvider } from './email/email.provider';
-import { EmailService } from './email/email.service';
-import { EmailProviderInterface } from './email/interfaces/email.provider.interface';
-import { GithubClient } from './github/github.client';
-import { GithubService } from './github/github.service';
-import { GithubClientInterface } from './github/interfaces/github.client.interface';
-import { GithubRateLimiter } from './github/utils/github-rate-limiter';
-import { GithubReleaseNotificationJob } from './jobs/github-repo-release.job';
+import { createLoggerConfig } from './config/logger.config';
+import { createPrismaClient, PrismaDBClient } from './infrastructure/database/prisma';
+import { GithubClient } from './modules/github/github.client';
+import { GithubService } from './modules/github/github.service';
+import { GithubClientInterface } from './modules/github/interfaces/github.client.interface';
+import { GithubRateLimiter } from './modules/github/utils/github-rate-limiter';
+import { GithubReleaseNotificationJob } from './modules/subscription/jobs/github-repo-release.job';
 import { JobsManager } from './jobs/manager';
-import { UnconfirmedSubscriptionsCleanupJob } from './jobs/unconfirmed-subscriptions.job';
-import { SubscriptionController } from './subscriptions/subscription.controller';
-import { SubscriptionRepository } from './subscriptions/subscription.repository';
-import { SubscriptionService } from './subscriptions/subscription.service';
-import { GithubClientMapper } from './github/mappers/github-client.mapper';
-import { SubscriptionPrismaMapper } from './subscriptions/mappers/subscription-prisma.mapper';
-import { SubscriptionControllerMapper } from './subscriptions/mappers/subscription-controller.mapper';
-import { MetricsController } from './metrics/metrics.controller';
+import { UnconfirmedSubscriptionsCleanupJob } from './modules/subscription/jobs/unconfirmed-subscriptions.job';
+import { SubscriptionController } from './modules/subscription/subscription.controller';
+import { SubscriptionRepository } from './modules/subscription/subscription.repository';
+import { SubscriptionService } from './modules/subscription/subscription.service';
+import { GithubClientMapper } from './modules/github/mappers/github-client.mapper';
+import { SubscriptionPrismaMapper } from './modules/subscription/mappers/subscription-prisma.mapper';
+import { SubscriptionControllerMapper } from './modules/subscription/mappers/subscription-controller.mapper';
+import { MetricsController } from '../libs/infrastructure/metrics/metrics.controller';
+import { SubscriptionNotificationSenderInterface } from './infrastructure/notification/interfaces/subscription-email.service.interface';
+import { RepositoryReleaseNotificationSenderInterface } from './infrastructure/notification/interfaces/repository-release-email.sender.interface';
+import { NotificationClient } from './infrastructure/notification/notification.client';
+import { NotificationClientMapper } from './infrastructure/notification/notification.mapper';
+
+type NotificationSender = SubscriptionNotificationSenderInterface &
+  RepositoryReleaseNotificationSenderInterface;
 
 export type ContainerOverrides = Partial<{
   logger: AppLogger;
-  prisma: DBClient;
-  emailProvider: EmailProviderInterface;
+  prisma: PrismaDBClient;
+  notificationClient: NotificationSender;
   githubClient: GithubClientInterface;
 }>;
 
@@ -34,8 +38,9 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
 
   const prisma = overrides?.prisma || createPrismaClient(env.DATABASE_URL);
 
-  const emailProvider = overrides?.emailProvider || new EmailProvider(env);
-  const emailService = new EmailService(emailProvider, env.APP_BASE_URL);
+  const notificationMapper = new NotificationClientMapper();
+  const notificationClient =
+    overrides?.notificationClient || new NotificationClient(env, notificationMapper);
 
   const githubRateLimiter = new GithubRateLimiter();
   const githubClientMapper = new GithubClientMapper();
@@ -47,8 +52,9 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   const subscriptionRepository = new SubscriptionRepository(prisma, subscriptionRepositoryMapper);
   const subscriptionService = new SubscriptionService(
     subscriptionRepository,
-    emailService,
+    notificationClient,
     githubService,
+    env.APP_BASE_URL,
   );
   const subscriptionControllerMapper = new SubscriptionControllerMapper();
   const subscriptionController = new SubscriptionController(
@@ -61,9 +67,10 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   const githubRepositoryReleaseJob = new GithubReleaseNotificationJob(
     githubService,
     subscriptionService,
-    emailService,
+    notificationClient,
     githubRateLimiter,
     logger,
+    env.APP_BASE_URL,
   );
 
   const unconfirmedSubscriptionsCleanupJob = new UnconfirmedSubscriptionsCleanupJob(
@@ -82,11 +89,11 @@ export function createContainer(env: Env, overrides?: ContainerOverrides) {
   return {
     logger,
     prisma,
-    emailProvider,
+    notificationClient,
     githubRateLimiter,
     jobsManager,
     controllers: { subscriptionController, metricsController },
-    services: { subscriptionService, emailService, githubService },
+    services: { subscriptionService, githubService },
   };
 }
 

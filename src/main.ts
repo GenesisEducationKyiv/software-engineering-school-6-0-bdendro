@@ -1,9 +1,8 @@
 import { env } from './config/env';
 import { createApp } from './app';
 import { createContainer } from './container';
-import { EMAIL_VERIFICATION_ERROR_KIND } from './email/constants/email-provider';
-import { createLoggerConfig } from './config/logger';
-import { PinoLogger } from './common/modules/logger/pino-logger';
+import { createLoggerConfig } from './config/logger.config';
+import { PinoLogger } from '../libs/infrastructure/logger/pino-logger';
 
 const logger = new PinoLogger(createLoggerConfig(env));
 
@@ -12,21 +11,6 @@ async function bootstrap() {
 
   await container.prisma.$connect();
   logger.info('Prisma connection established successfully');
-
-  const emailVerification = await container.emailProvider.verifyTransporter();
-  if (!emailVerification.ok) {
-    if (emailVerification.kind !== EMAIL_VERIFICATION_ERROR_KIND.AUTH)
-      throw new Error('SMTP authentication failed. Check email credentials.', {
-        cause: emailVerification.error,
-      });
-
-    logger.warn(
-      { err: emailVerification.error, kind: emailVerification.kind },
-      `SMTP is currently unavailable. Server will start without verified email connectivity.`,
-    );
-  } else {
-    logger.info('SMTP connection successful. Email transporter is ready.');
-  }
 
   const app = createApp(container);
 
@@ -41,7 +25,8 @@ async function bootstrap() {
     server.close();
 
     await container.prisma.$disconnect();
-    container.emailProvider.closeConnection();
+    logger.info('Prisma connection closed successfully.');
+
     await container.jobsManager.stopJobs();
 
     logger.info('Application shut down successfully.');

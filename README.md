@@ -1,6 +1,6 @@
 # GitHub Release Subscription API
 
-A monolithic API service for subscribing to email notifications about new releases of selected GitHub repositories.
+An API service for subscribing to email notifications about new releases of selected GitHub repositories.
 
 The application validates repositories through the GitHub API, stores subscriptions in PostgreSQL, sends confirmation emails, periodically checks for new releases, and notifies confirmed subscribers when a new release appears.
 
@@ -146,10 +146,12 @@ Apply migrations:
 npm run migrate:prod
 ```
 
+#### Main API
+
 Start in development mode:
 
 ```bash
-npm run start:dev
+npm run start
 ```
 
 Build and run in production mode:
@@ -157,6 +159,21 @@ Build and run in production mode:
 ```bash
 npm run build
 npm run start:prod
+```
+
+#### Notification Service
+
+Start in development mode:
+
+```bash
+npm run start:notification
+```
+
+Build and run in production mode:
+
+```bash
+npm run build:notification
+npm run start:prod:notification
 ```
 
 ---
