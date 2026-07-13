@@ -1,5 +1,5 @@
 import { connect, type AmqpConnectionManager } from 'amqp-connection-manager';
-import { AppLogger } from '../logger/interfaces/logger.interface';
+import type { AppLogger } from '../logger/interfaces/logger.interface';
 
 export type RabbitMqConnection = AmqpConnectionManager;
 

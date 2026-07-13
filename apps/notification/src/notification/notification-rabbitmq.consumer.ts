@@ -33,49 +33,14 @@ export class NotificationRabbitMqEventConsumer implements MessageConsumerInterfa
   ) {
     this.channelWrapper = connection.createChannel({
       setup: async (channel: ConfirmChannel) => {
-        await Promise.all([
-          channel.assertExchange(NOTIFICATION_DLX, 'topic', { durable: true }),
-          channel.assertExchange(MAIN_EXCHANGE, 'topic', { durable: true }),
-
-          channel.assertQueue(NOTIFICATION_QUEUE, {
-            durable: true,
-            arguments: {
-              'x-dead-letter-exchange': NOTIFICATION_DLX,
-            },
-          }),
-          channel.assertQueue(NOTIFICATION_DLQ, { durable: true }),
-
-          channel.prefetch(10),
-        ]);
-
-        await channel.bindQueue(NOTIFICATION_QUEUE, MAIN_EXCHANGE, NOTIFICATION_ROUTING_PATTERN);
-        await channel.bindQueue(NOTIFICATION_DLQ, NOTIFICATION_DLX, '#');
+        await this.setupChannel(channel);
       },
     });
   }
 
   async start(): Promise<void> {
     await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => {
-      const { consumerTag } = await channel.consume(NOTIFICATION_QUEUE, (msg) => {
-        if (!msg) {
-          this.logger.error('Consumer was cancelled by broker. Restarting channel...');
-          channel.close().catch((err: unknown) => {
-            this.logger.error(
-              { err, queue: NOTIFICATION_QUEUE },
-              'Error while trying to close dead channel.',
-            );
-          });
-          return;
-        }
-
-        this.handleMessage(msg, channel).catch((err: unknown) => {
-          this.logger.error(
-            { err, queue: NOTIFICATION_QUEUE },
-            'Unchecked error while processing notification event.',
-          );
-        });
-      });
-      this.consumerTag = consumerTag;
+      await this.startConsumer(channel);
     });
   }
 
@@ -90,6 +55,64 @@ export class NotificationRabbitMqEventConsumer implements MessageConsumerInterfa
       );
     }
     await this.channelWrapper.close();
+  }
+
+  private async setupChannel(channel: ConfirmChannel) {
+    await Promise.all([
+      channel.assertExchange(NOTIFICATION_DLX, 'topic', { durable: true }),
+      channel.assertExchange(MAIN_EXCHANGE, 'topic', { durable: true }),
+
+      channel.assertQueue(NOTIFICATION_QUEUE, {
+        durable: true,
+        arguments: {
+          'x-dead-letter-exchange': NOTIFICATION_DLX,
+        },
+      }),
+      channel.assertQueue(NOTIFICATION_DLQ, { durable: true }),
+
+      channel.prefetch(10),
+    ]);
+
+    await channel.bindQueue(NOTIFICATION_QUEUE, MAIN_EXCHANGE, NOTIFICATION_ROUTING_PATTERN);
+    await channel.bindQueue(NOTIFICATION_DLQ, NOTIFICATION_DLX, '#');
+  }
+
+  private async startConsumer(channel: ConfirmChannel) {
+    const { consumerTag } = await channel.consume(NOTIFICATION_QUEUE, (msg) => {
+      if (!msg) {
+        this.logger.error('Consumer was cancelled by broker. Setup consumer...');
+        this.setupChannel(channel)
+          .then(() => {
+            this.logger.info({ queue: NOTIFICATION_QUEUE }, 'Successfully setup consumer.');
+
+            this.startConsumer(channel)
+              .then(() => {
+                this.logger.info({ queue: NOTIFICATION_QUEUE }, 'Consumer restarted.');
+              })
+              .catch((err: unknown) => {
+                this.logger.error(
+                  { err, queue: NOTIFICATION_QUEUE },
+                  'Error while trying to restart consumer.',
+                );
+              });
+          })
+          .catch((err: unknown) => {
+            this.logger.error(
+              { err, queue: NOTIFICATION_QUEUE },
+              'Error while trying to setup consumer after cancellation.',
+            );
+          });
+        return;
+      }
+
+      this.handleMessage(msg, channel).catch((err: unknown) => {
+        this.logger.error(
+          { err, queue: NOTIFICATION_QUEUE },
+          'Unchecked error while processing notification event.',
+        );
+      });
+    });
+    this.consumerTag = consumerTag;
   }
 
   private async handleMessage(msg: ConsumeMessage, channel: ConfirmChannel): Promise<void> {
@@ -111,7 +134,7 @@ export class NotificationRabbitMqEventConsumer implements MessageConsumerInterfa
           break;
         default:
           this.logger.warn({ routingKey, queue: NOTIFICATION_QUEUE }, `Ignored unknown event.`);
-          channel.ack(msg);
+          channel.nack(msg, false, false);
       }
     } catch (err) {
       this.logger.error(
