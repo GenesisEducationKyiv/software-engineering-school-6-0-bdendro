@@ -13,7 +13,7 @@ export function getRepoUpdateTemplate(release: RepositoryRelease, unsubscribeUrl
         }. You can view the release details <a href="${release.htmlUrl}">here</a>.</p>
         <p>Stay tuned for future updates.</p>
         <p style="font-size: 12px; color: #999; text-align: center; margin-top: 40px;">
-          If you no longer wish to receive GItHub repository updates, you can 
+          If you no longer wish to receive GitHub repository updates, you can 
           <a href="${unsubscribeUrl}" style="color: #999; text-decoration: underline;">unsubscribe here</a>.
         </p>
       </body>

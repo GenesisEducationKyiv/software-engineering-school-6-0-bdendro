@@ -24,6 +24,10 @@ The application validates repositories through the GitHub API, stores subscripti
 - CI pipeline for format check, lint, build, and tests
 - Interactive Swagger UI documentation for API exploration and testing
 
+> **Note**
+> For structured logging this project uses **Pino**. Please avoid using `console`.
+> To log events instantiate or inject `PinoLogger` and use its methods.
+
 ---
 
 ## Tech Stack
@@ -39,6 +43,7 @@ The application validates repositories through the GitHub API, stores subscripti
 - node-cron
 - Jest
 - ESLint + Prettier
+- Pino
 - Docker
 
 ---
@@ -75,16 +80,40 @@ cp .env.example .env
 
 Then **manually update** the required values in `.env`.
 
+Create the Docker network:
+
+```bash
+docker network create backend-net
+```
+
 Start the application:
 
 ```bash
 docker compose up --build
 ```
 
-Stop and remove containers:
+Start the observability stack:
+
+```bash
+docker compose -f docker-compose.observability.yml up --build
+```
+
+Stop and remove application containers:
 
 ```bash
 docker compose down -v
+```
+
+Stop and remove observability containers:
+
+```bash
+docker compose -f docker-compose.observability.yml down -v
+```
+
+Remove the Docker network:
+
+```bash
+docker network rm backend-net
 ```
 
 ---

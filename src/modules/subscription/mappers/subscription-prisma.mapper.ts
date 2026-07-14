@@ -2,6 +2,7 @@ import type {
   Subscription as PrismaSubscription,
   Prisma,
 } from '../../../../libs/database/generated/prisma/client';
+
 import { Subscription, SubscriptionWithRepository } from '../types/subscription';
 
 type PrismaSubscriptionWithRepository = Prisma.SubscriptionGetPayload<{

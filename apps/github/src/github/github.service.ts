@@ -11,6 +11,6 @@ export class GithubService implements GithubServiceInterface {
   }
 
   async getLastRelease(repo: string): Promise<GithubRelease | null> {
-    return await this.githubClient.getLatestRelease(repo);
+    return this.githubClient.getLatestRelease(repo);
   }
 }

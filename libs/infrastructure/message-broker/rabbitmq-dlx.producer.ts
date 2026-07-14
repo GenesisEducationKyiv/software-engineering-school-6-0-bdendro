@@ -26,7 +26,7 @@ export class RabbitMqDlxProducer {
     const properties = originalMessage.properties || {};
     const headers = properties.headers || {};
 
-    const routingKey = originalMessage.fields.routingKey || 'unknown.routing_key';
+    const routingKey = originalMessage.fields.routingKey;
 
     await this.channelWrapper.publish(this.exchange, routingKey, originalMessage.content, {
       ...properties,

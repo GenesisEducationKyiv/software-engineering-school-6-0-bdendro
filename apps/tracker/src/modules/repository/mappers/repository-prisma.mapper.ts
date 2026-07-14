@@ -5,8 +5,6 @@ import { RepositoryCreateInput } from '../types/repository-repository';
 type RepositoryPrismaCreateInput = Omit<PrismaRepository, 'id' | 'createdAt'>;
 
 export class RepositoryPrismaMapper {
-  constructor() {}
-
   toRepository(prismaRepository: PrismaRepository): Repository;
   toRepository(prismaRepository: PrismaRepository | null): Repository | null;
   toRepository(prismaRepository: PrismaRepository | null): Repository | null {
