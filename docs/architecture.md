@@ -24,13 +24,13 @@ graph TD
     Tracker -->|gRPC| GH[GitHub Service]
 
     Tracker -->|Release detected| RMQ((RabbitMQ))
-    Tracker -->|Saga reply| RMQ
-    Core -->|Saga command| RMQ
+    Tracker -->|Track / Untrack Repo reply| RMQ
+    Core -->|Track / Untrack Repo command| RMQ
     Core -->|Subscription event| RMQ
 
     RMQ -->|Release detected| Core
-    RMQ -->|Saga reply| Core
-    RMQ -->|Saga command| Tracker[Tracker Service]
+    RMQ -->|Track / Untrack Repo reply| Core
+    RMQ -->|Track / Untrack Repo command| Tracker[Tracker Service]
     RMQ -->|Subscription event| Notification[Notification Service]
 
     GH -->|HTTP/REST| GHAPI[GitHub API]
@@ -66,7 +66,8 @@ graph TD
     end
 
     subgraph Infrastructure["Infrastructure"]
-        PrismaRepo[Prisma Repositories]
+        SubRepo[Subscription Repository]
+        SubscriptionRepositoryRepo[Subscription Repository Repository]
         SagaRepo[Saga State Repository]
         Producers[RabbitMQ Producers]
     end
@@ -74,22 +75,28 @@ graph TD
     DB[(PostgreSQL)]
 
     Controller --> SubService
-    Consumers -->|Release / Repo Events| SubService
-    Consumers -->|Saga Replies| Saga
+    Consumers -->|Release Detected event| SubService
+    Consumers -->|Repository events| SubService
+    Consumers -->|Track / Untrack Repo reply| Saga
 
-    SubService --> PrismaRepo
-    SubService --> Producers
+    SubService --> SubRepo
+    SubService -->|Start saga| Saga
+    SubService --> SubscriptionRepositoryRepo
+    SubService -->|Subscription event| Producers
+
     Saga --> SagaRepo
-    Saga --> SubService
-    Saga --> Producers
+    Saga -->|Update repository projection| SubscriptionRepositoryRepo
+    Saga -->|Create / Delete Subscription| SubService
+    Saga -->|Track / Untrack Repo command| Producers
 
-    PrismaRepo --> DB
+    SubRepo --> DB
+    SubscriptionRepositoryRepo --> DB
     SagaRepo --> DB
 
     classDef component fill:#21262d,stroke:#30363d,stroke-width:1px,color:#c9d1d9;
     classDef database fill:#161b22,stroke:#484f58,stroke-width:1px,color:#8b949e;
 
-    class Controller,Consumers,SubService,Saga,PrismaRepo,SagaRepo,Producers component;
+    class Controller,Consumers,SubService,Saga,SubRepo,SubscriptionRepositoryRepo,SagaRepo,Producers component;
     class DB database;
 
     style Presentation fill:transparent,stroke:#484f58,stroke-width:1px,color:#c9d1d9,stroke-dasharray: 5 5
@@ -119,19 +126,19 @@ graph TD
         RepoRepo[Repository Repository]
     end
 
-        DB[(PostgreSQL)]
-
+    DB[(PostgreSQL)]
 
     Cron --> Scanner
-    Consumer -->|Repository commands| RepoService
+    Consumer -->|Track / Untrack Repo command| RepoService
+    Consumer -->|Track / Untrack Repo command| RepoService
 
-    Scanner --> GHClient
-    Scanner --> Producers
+    Scanner -->|Get releases| GHClient
+    Scanner -->|Release Detected event| Producers
     Scanner --> RepoService
 
     RepoService --> RepoRepo
-    RepoService --> Producers
-    RepoService --> GHClient
+    RepoService -->|Track / Untrack Repo reply| Producers
+    RepoService -->|Validate repository / Get release| GHClient
 
     RepoRepo --> DB
 
@@ -170,7 +177,8 @@ graph TD
     gRPC --> Service
     HTTP --> Service
     Service --> Client
-    Client --> ExtAPI
+    Client -->|GET Repository| ExtAPI
+    Client -->|GET Latest Release| ExtAPI
 
     classDef component fill:#21262d,stroke:#30363d,stroke-width:1px,color:#c9d1d9;
     classDef external fill:#161b22,stroke:#484f58,stroke-width:1px,stroke-dasharray: 5 5,color:#8b949e;
@@ -204,9 +212,8 @@ graph TD
 
     SMTP((SMTP Host))
 
-
-    Consumer --> EmailService
-    EmailService --> Templates
+    Consumer -->|Subscription event| EmailService
+    EmailService -->|Render HTML with data| Templates
     EmailService --> Provider
     Provider --> SMTP
 
