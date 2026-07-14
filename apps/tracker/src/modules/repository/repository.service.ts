@@ -1,5 +1,5 @@
 import { NotFoundError } from '../../../../../libs/common/utils/errors/custom-errors';
-import { GithubServiceInterface } from '../github';
+import { GITHUB_ERROR_MESSAGES, GithubClientInterface } from '../github';
 import { RepositoryRepositoryInterface } from './interfaces/repository.repository.interface';
 import { RepositoryServiceInterface } from './interfaces/repository.service.interface';
 import { RepositoryEventProducer } from './repository-event.producer';
@@ -8,7 +8,7 @@ import { Repository } from './types/repository';
 export class RepositoryService implements RepositoryServiceInterface {
   constructor(
     private readonly repositoryRepository: RepositoryRepositoryInterface,
-    private readonly githubService: GithubServiceInterface,
+    private readonly githubClient: GithubClientInterface,
     private readonly eventProducer: RepositoryEventProducer,
   ) {}
 
@@ -21,7 +21,8 @@ export class RepositoryService implements RepositoryServiceInterface {
   }
 
   async track(repo: string): Promise<Repository> {
-    await this.githubService.ensureRepositoryExists(repo);
+    const exists = await this.githubClient.isRepositoryExists(repo);
+    if (!exists) throw new NotFoundError(GITHUB_ERROR_MESSAGES.REPO_NOT_FOUND);
 
     const repository = await this.repositoryRepository.getByRepoName(repo);
     if (repository) {
@@ -29,7 +30,7 @@ export class RepositoryService implements RepositoryServiceInterface {
       return repository;
     }
 
-    const release = await this.githubService.getLastRelease(repo);
+    const release = await this.githubClient.getLatestRelease(repo);
 
     const foundRepository = await this.repositoryRepository.createOrGet({
       repo,

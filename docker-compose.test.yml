@@ -85,6 +85,9 @@ services:
       EMAIL_HOST: ${EMAIL_HOST}
       EMAIL_PORT: ${EMAIL_PORT}
       EMAIL_SECURE: ${EMAIL_SECURE}
+      GITHUB_SERVICE_URL: localhost:50051
+      GITHUB_PORT: 3004
+      GITHUB_GRPC_PORT: 50051
       GITHUB_API_URL: ${GITHUB_API_URL}
       GITHUB_TOKEN: ${GITHUB_TOKEN}
 
@@ -120,6 +123,9 @@ services:
       EMAIL_HOST: mailpit
       EMAIL_PORT: 1025
       EMAIL_SECURE: 'false'
+      GITHUB_SERVICE_URL: localhost:50051
+      GITHUB_PORT: 3004
+      GITHUB_GRPC_PORT: 50051
       GITHUB_API_URL: http://wiremock:8080
       GITHUB_TOKEN: ${GITHUB_TOKEN}
       WIREMOCK_URL: http://wiremock:8080

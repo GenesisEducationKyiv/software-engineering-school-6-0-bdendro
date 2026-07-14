@@ -13,11 +13,8 @@ import { createLoggerConfig } from './config/logger.config';
 import { ConsumerManager } from './consumer-manager';
 import { createPrismaClient, PrismaDBClient } from './infrastructure/database/prisma';
 import { JobsManager } from './jobs-manager';
-import { GithubClient } from './modules/github/github.client';
-import { GithubService } from './modules/github/github.service';
-import { GithubClientInterface } from './modules/github/interfaces/github.client.interface';
-import { GithubClientMapper } from './modules/github/mappers/github-client.mapper';
-import { GithubRateLimiter } from './modules/github/utils/github-rate-limiter';
+import { GithubGrpcClient } from './modules/github/github-grpc.client';
+import { GithubClientGrpcMapper } from './modules/github/mappers/github-grpc.mapper';
 import { RepositoryPrismaMapper } from './modules/repository/mappers/repository-prisma.mapper';
 import { RepositoryReplyProducerMapper } from './modules/repository/mappers/repository-reply-producer.mapper';
 import { RepositoryCommandConsumer } from './modules/repository/repository-command.consumer';
@@ -34,7 +31,6 @@ type ContainerOverrides = Partial<{
   logger: AppLogger;
   prisma: PrismaDBClient;
   rabbitMqConnection: RabbitMqConnection;
-  githubClient: GithubClientInterface;
 }>;
 
 type ContainerOptions = Partial<{ serviceName: string; overrides: ContainerOverrides }>;
@@ -52,13 +48,9 @@ export function createContainer(env: Env, options?: ContainerOptions) {
   // Dead letter exchange producer
   const dlxProducer = new RabbitMqDlxProducer(rabbitMqConnection, TRACKER_DLX, TRACKER_DLQ);
 
-  // GitHub
-  const githubRateLimiter = new GithubRateLimiter();
-  const githubClientMapper = new GithubClientMapper();
-  const githubClient =
-    options?.overrides?.githubClient ||
-    new GithubClient(githubRateLimiter, githubClientMapper, env);
-  const githubService = new GithubService(githubClient);
+  // Github
+  const githubClientMapper = new GithubClientGrpcMapper();
+  const githubClient = new GithubGrpcClient(env.GITHUB_SERVICE_URL, githubClientMapper);
 
   // Repository
   const repositoryBaseMessageProducer = new RabbitMqProducer(rabbitMqConnection, TRACKER_EXCHANGE);
@@ -68,7 +60,7 @@ export function createContainer(env: Env, options?: ContainerOptions) {
   const repositoryRepository = new RepositoryPrismaRepository(prisma, repositoryRepositoryMapper);
   const repositoryService = new RepositoryService(
     repositoryRepository,
-    githubService,
+    githubClient,
     repositoryEventProducer,
   );
 
@@ -98,7 +90,7 @@ export function createContainer(env: Env, options?: ContainerOptions) {
   // Scanner
   const scannerService = new ScannerService(
     repositoryService,
-    githubService,
+    githubClient,
     scannerEventProducer,
     logger,
   );
@@ -115,16 +107,16 @@ export function createContainer(env: Env, options?: ContainerOptions) {
     logger,
     prisma,
     rabbitMqConnection,
-    githubRateLimiter,
     consumerManager,
     jobsManager,
+    clients: { githubClient },
     producers: {
       base: { scannerBaseMessageProducer, repositoryBaseMessageProducer },
       scanner: { scannerEventProducer },
       repository: { repositoryEventProducer, repositoryReplyProducer },
       dlxProducer,
     },
-    services: { githubService, repositoryService, scannerService },
+    services: { repositoryService, scannerService },
   };
 }
 

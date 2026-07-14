@@ -8,5 +8,6 @@ RUN npm ci
 COPY . .
 
 RUN npm run prisma:generate
+RUN npm run proto:generate
 
 CMD ["npm", "run", "test:e2e"]

@@ -140,6 +140,12 @@ Generate Prisma client:
 npm run prisma:generate
 ```
 
+Generate gRPC contracts:
+
+```bash
+npm run proto:generate
+```
+
 Apply migrations:
 
 ```bash
@@ -189,6 +195,21 @@ Build and run in production mode:
 ```bash
 npm run build:tracker
 npm run start:prod:tracker
+```
+
+#### GitHub Service
+
+Start in development mode:
+
+```bash
+npm run start:github
+```
+
+Build and run in production mode:
+
+```bash
+npm run build:github
+npm run start:prod:github
 ```
 
 ---

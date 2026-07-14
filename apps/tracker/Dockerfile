@@ -10,13 +10,14 @@ RUN npm ci
 FROM deps AS build
 
 COPY tsconfig.json ./
+COPY buf.yaml buf.gen.yaml ./
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
 COPY apps/tracker ./apps/tracker
 COPY libs ./libs
 
-# Generate Prisma client
 RUN npm run prisma:generate
+RUN npm run proto:generate
 
 RUN npm run build:tracker
 

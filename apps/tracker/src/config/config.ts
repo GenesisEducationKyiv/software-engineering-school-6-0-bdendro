@@ -29,8 +29,7 @@ const envSchema = z.object({
 
   DATABASE_URL: z.url({ normalize: true }).min(1),
 
-  GITHUB_TOKEN: z.string().trim().min(1),
-  GITHUB_API_URL: z.url({ protocol: /^https?$/ }),
+  GITHUB_SERVICE_URL: z.url(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

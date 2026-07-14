@@ -1,12 +1,5 @@
 export const GITHUB_NAME = 'GitHub';
 
-export const GITHUB_API_ENDPOINT = {
-  getRepoEndpoint(repo: string) {
-    return `/repos/${repo}`;
-  },
-  getRepoLastRelease(repo: string) {
-    return `/repos/${repo}/releases/latest`;
-  },
-};
-
-export const GITHUB_API_VERSION = '2026-03-10';
+export const GITHUB_ERROR_MESSAGES = {
+  REPO_NOT_FOUND: `${GITHUB_NAME} repository not found or inaccessible.`,
+} as const;

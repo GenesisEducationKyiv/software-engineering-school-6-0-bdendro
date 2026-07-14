@@ -47,11 +47,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check code formatting
+        run: npm run format:diff
+
       - name: Generate prisma client
         run: npm run prisma:generate
 
-      - name: Check code formatting
-        run: npm run format:diff
+      - name: Lint gRPC contracts
+        run: npm run proto:lint
+
+      - name: Generate gRPC contracts
+        run: npm run proto:generate
 
       - name: Lint
         run: npm run lint
@@ -62,8 +68,14 @@ jobs:
       - name: Build main API
         run: npm run build
 
-      - name: Build modular monolith
+      - name: Build Notification service
         run: npm run build:notification
+
+      - name: Build Tracker service
+        run: npm run build:tracker
+
+      - name: Build GitHub service
+        run: npm run build:github
 
   unit-tests:
     name: Unit Tests
@@ -88,6 +100,9 @@ jobs:
 
       - name: Generate prisma client
         run: npm run prisma:generate
+
+      - name: Generate gRPC contracts
+        run: npm run proto:generate
 
       - name: Run unit tests
         run: npm run test:unit

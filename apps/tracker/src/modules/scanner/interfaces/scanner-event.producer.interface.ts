@@ -1,5 +1,5 @@
-import { GithubRelease } from '../../github';
+import { RepositoryRelease } from '../../github/types/repository-release';
 
 export interface RepositoryReleaseEventProducerInterface {
-  produceSubscriptionRepositoryRelease(release: GithubRelease): Promise<void>;
+  produceSubscriptionRepositoryRelease(release: RepositoryRelease): Promise<void>;
 }
