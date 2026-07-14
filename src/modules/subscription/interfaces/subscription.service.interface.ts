@@ -1,12 +1,26 @@
+import { SubscriptionOperationStatuses } from '../constants/subscriptions.const';
+import { RepositoryReleaseDetectedEvent } from '../schemas/repository-release.schema';
 import { SubscribeBody } from '../schemas/subscription.schema';
-import { Subscription } from '../types/subscription';
+import {
+  Subscription,
+  SubscriptionOperation,
+  SubscriptionWithRepository,
+} from '../types/subscription';
+
+export type SubscribeResult =
+  | { status: SubscriptionOperationStatuses['SUCCESS'] }
+  | { status: SubscriptionOperationStatuses['PENDING']; operationId: number };
 
 export interface SubscriptionServiceInterface {
   getConfirmedSubscriptions(): Promise<Subscription[]>;
-  deleteUnconfirmed(expirationTimeInMs: number): Promise<number>;
-  updateLastSeenTagByToken(token: string, lastSeenTag: string): Promise<Subscription>;
-  subscribe(subscribeBody: SubscribeBody): Promise<void>;
+  getSubscriptionsWithRepoByEmail(email: string): Promise<SubscriptionWithRepository[]>;
+  getSubscriptionsByRepo(repo: string): Promise<Subscription[]>;
+  createSubscription(email: string, repoId: number, repoName: string): Promise<Subscription>;
+  subscribe(subscribeBody: SubscribeBody): Promise<SubscribeResult>;
   confirm(token: string): Promise<void>;
   unsubscribe(token: string): Promise<void>;
-  getSubscriptionsByEmail(email: string): Promise<Subscription[]>;
+  deleteUnconfirmed(expirationTimeInMs: number): Promise<number>;
+
+  processRepositoryRelease(release: RepositoryReleaseDetectedEvent): Promise<void>;
+  getSubscriptionOperation(id: number): Promise<SubscriptionOperation | null>;
 }

@@ -70,6 +70,32 @@ services:
     networks:
       - backend-net
 
+  tracker:
+    build:
+      context: .
+      dockerfile: apps/tracker/Dockerfile
+      target: production
+    ports:
+      - '${TRACKER_PORT:-3003}:3003'
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - path: .env
+    environment:
+      NODE_ENV: production
+      TRACKER_PORT: 3003
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/github_subscription_api?schema=public
+      RABBITMQ_URL: amqp://app:app@rabbitmq:5672
+    logging:
+      options:
+        max-size: '10m'
+        max-file: '5'
+    networks:
+      - backend-net
+
   app:
     build:
       context: .
@@ -82,6 +108,8 @@ services:
       rabbitmq:
         condition: service_started
       notification:
+        condition: service_started
+      tracker:
         condition: service_started
     env_file:
       - path: .env

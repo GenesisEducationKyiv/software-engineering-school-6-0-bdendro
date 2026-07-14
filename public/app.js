@@ -6,6 +6,7 @@ const statusMessage = document.querySelector('[data-testid="status-message"]');
 
 const API_ENDPOINTS = {
   subscribe: '/api/subscribe',
+  operationStatus: (id) => `/api/subscription-operations/${id}`,
 };
 
 subscribeForm.addEventListener('submit', async (event) => {
@@ -41,6 +42,11 @@ subscribeForm.addEventListener('submit', async (event) => {
       return;
     }
 
+    if (response.status === 202 && responseBody.operationId) {
+      await pollSubscriptionStatus(responseBody.operationId);
+      return;
+    }
+
     showStatus(
       'success',
       responseBody.message || 'Subscription successful. Confirmation email sent.',
@@ -53,6 +59,43 @@ subscribeForm.addEventListener('submit', async (event) => {
     setLoading(false);
   }
 });
+
+async function pollSubscriptionStatus(operationId) {
+  showStatus('info', 'Processing subscription. Please wait....');
+
+  const delays = [100, 200, 300, 500, 1000, 3000];
+  let currentDelayIndex = 0;
+  const startTime = Date.now();
+  const MAX_POLL_TIME = 30000;
+
+  while (Date.now() - startTime < MAX_POLL_TIME) {
+    const delay = delays[Math.min(currentDelayIndex, delays.length - 1)];
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    currentDelayIndex++;
+
+    try {
+      const res = await fetch(API_ENDPOINTS.operationStatus(operationId));
+      const data = await readJsonResponse(res);
+
+      if (!res.ok || data.status === 'FAILED') {
+        const statusCode = res.ok ? 400 : res.status;
+        showApiError(statusCode, data);
+        return;
+      }
+
+      if (data.status === 'SUCCESS') {
+        showStatus('success', data.message || 'Subscription successful. Confirmation email sent.');
+        subscribeForm.reset();
+        return;
+      }
+    } catch (err) {
+      console.warn('Polling error:', err);
+    }
+  }
+
+  showStatus('info', 'Processing delayed. Your subscription will be completed later.');
+  subscribeForm.reset();
+}
 
 function validateForm({ email, repo }) {
   if (!email) {

@@ -137,7 +137,7 @@ Then **manually update** the required values in `.env`.
 Generate Prisma client:
 
 ```bash
-npm run generate:prisma
+npm run prisma:generate
 ```
 
 Apply migrations:
@@ -176,6 +176,21 @@ npm run build:notification
 npm run start:prod:notification
 ```
 
+#### Tracker Service
+
+Start in development mode:
+
+```bash
+npm run start:tracker
+```
+
+Build and run in production mode:
+
+```bash
+npm run build:tracker
+npm run start:prod:tracker
+```
+
 ---
 
 ### 3. Run tests with Docker
@@ -188,11 +203,7 @@ cp .env.example .env.test
 
 Then **manually update** the required values in `.env.test`.
 
-Run tests in Docker:
-
-```bash
-docker compose --profile test run --rm test
-```
+To run tests in Docker see also [`testing.md`](./docs/testing.md)
 
 > **Note**
 > The repository contains `.env.example`, but does not include `.env.test.example`, so `.env.test` must be created manually.
@@ -216,16 +227,10 @@ cp .env.example .env.test
 Generate Prisma client:
 
 ```bash
-npm run generate:prisma
+npm run prisma:generate
 ```
 
-Run tests:
-
-```bash
-npm run test
-```
-
-You can also run the unit test command directly:
+You can run the unit test command:
 
 ```bash
 npm run test:unit
@@ -241,12 +246,13 @@ Base path:
 /api
 ```
 
-| Method | Endpoint                                    | Description                                                         |
-| ------ | ------------------------------------------- | ------------------------------------------------------------------- |
-| `POST` | `/api/subscribe`                            | Subscribe an email to release notifications for a GitHub repository |
-| `GET`  | `/api/confirm/{token}`                      | Confirm a subscription using the token from the email               |
-| `GET`  | `/api/unsubscribe/{token}`                  | Unsubscribe using the token from the email                          |
-| `GET`  | `/api/subscriptions?email=user@example.com` | Get all subscriptions for the given email                           |
+| Method | Endpoint                                     | Description                                                         |
+| ------ | -------------------------------------------- | ------------------------------------------------------------------- |
+| `POST` | `/api/subscribe`                             | Subscribe an email to release notifications for a GitHub repository |
+| `GET`  | `/api/confirm/{token}`                       | Confirm a subscription using the token from the email               |
+| `GET`  | `/api/unsubscribe/{token}`                   | Unsubscribe using the token from the email                          |
+| `GET`  | `/api/subscriptions?email=user@example.com`  | Get all subscriptions for the given email                           |
+| `GET`  | `/api/subscription-operations/{operationId}` | Check the status of an asynchronous subscription operation          |
 
 ### Example request: subscribe
 

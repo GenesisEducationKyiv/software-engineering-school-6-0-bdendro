@@ -48,7 +48,7 @@ jobs:
         run: npm ci
 
       - name: Generate prisma client
-        run: npm run generate:prisma
+        run: npm run prisma:generate
 
       - name: Check code formatting
         run: npm run format:diff
@@ -87,7 +87,7 @@ jobs:
         run: npm ci
 
       - name: Generate prisma client
-        run: npm run generate:prisma
+        run: npm run prisma:generate
 
       - name: Run unit tests
         run: npm run test:unit

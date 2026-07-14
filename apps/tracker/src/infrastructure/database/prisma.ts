@@ -1,0 +1,9 @@
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../../../../../libs/database/generated/prisma/client';
+
+export function createPrismaClient(connectionString: string) {
+  const adapter = new PrismaPg({ connectionString });
+  return new PrismaClient({ adapter });
+}
+
+export type PrismaDBClient = ReturnType<typeof createPrismaClient>;

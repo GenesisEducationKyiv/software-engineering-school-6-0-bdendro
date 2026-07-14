@@ -9,4 +9,8 @@ export const ERROR_MESSAGES = {
     }
     return `${entityName} with these ${prop.join(', ')} already exists`;
   },
+
+  getInUseMessage(entityName: string) {
+    return `Cannot delete ${entityName} because it is currently in use.`;
+  },
 } as const;

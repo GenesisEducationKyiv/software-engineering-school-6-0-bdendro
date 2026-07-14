@@ -1,10 +1,10 @@
-import { RepositoryRelease } from '../../../../libs/contracts/main/events/main.produce.contract';
-import { GithubRelease } from '../../github';
+import { RepositoryRelease } from '../../../../libs/contracts/notification/notification.contract';
+import { RepositoryReleaseDetectedEvent } from '../schemas/repository-release.schema';
 
 export class SubscriptionProducerMapper {
   constructor() {}
 
-  toRepositoryRelease(release: GithubRelease): RepositoryRelease {
+  toRepositoryRelease(release: RepositoryReleaseDetectedEvent): RepositoryRelease {
     return {
       id: release.id,
       repoName: release.repoName,

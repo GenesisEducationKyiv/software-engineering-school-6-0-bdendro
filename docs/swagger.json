@@ -41,7 +41,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "description": "Subscription successful. Confirmation email sent.",
             "schema": {
               "$ref": "#/definitions/MessageResponse"
@@ -49,6 +49,18 @@
             "examples": {
               "application/json": {
                 "message": "Subscription successful. Confirmation email sent."
+              }
+            }
+          },
+          "202": {
+            "description": "Subscription request accepted and is being processed asynchronously.",
+            "schema": {
+              "$ref": "#/definitions/PendingResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Processing subscription. Use operationId to check the status.",
+                "operationId": "1"
               }
             }
           },
@@ -66,17 +78,6 @@
                     "message": "Repository must be in owner/repo format"
                   }
                 ]
-              }
-            }
-          },
-          "404": {
-            "description": "Repository not found on GitHub",
-            "schema": {
-              "$ref": "#/definitions/MessageResponse"
-            },
-            "examples": {
-              "application/json": {
-                "message": "GitHub repository not found or inaccessible."
               }
             }
           },
@@ -279,6 +280,68 @@
           }
         }
       }
+    },
+    "/api/subscription-operations/{operationId}": {
+      "get": {
+        "tags": ["subscription"],
+        "summary": "Get subscription operation status",
+        "description": "Checks the status of an asynchronous subscription operation (saga) using its operationId.",
+        "operationId": "getSubscriptionOperation",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "operationId",
+            "in": "path",
+            "description": "Numeric ID of the operation to check",
+            "required": true,
+            "type": "string",
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation status retrieved successfully",
+            "schema": {
+              "$ref": "#/definitions/SubscriptionOperationResponse"
+            },
+            "examples": {
+              "application/json": {
+                "status": "SUCCESS",
+                "startedAt": "2026-01-01T12:00:00.000Z",
+                "message": "Subscription successful. Confirmation email sent."
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid operationId format",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Validation Error",
+                "details": [
+                  {
+                    "path": ["operationId"],
+                    "message": "Invalid input: expected number, received NaN"
+                  }
+                ]
+              }
+            }
+          },
+          "404": {
+            "description": "Operation not found",
+            "schema": {
+              "$ref": "#/definitions/MessageResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Subscription Operation Not Found."
+              }
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -350,6 +413,44 @@
           "items": {
             "$ref": "#/definitions/ValidationErrorDetail"
           }
+        }
+      }
+    },
+    "PendingResponse": {
+      "type": "object",
+      "required": ["message", "operationId"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Processing subscription. Use operationId to check the status."
+        },
+        "operationId": {
+          "type": "string",
+          "description": "Unique identifier for tracking the asynchronous saga operation",
+          "example": "1"
+        }
+      }
+    },
+    "SubscriptionOperationResponse": {
+      "type": "object",
+      "required": ["status", "startedAt"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["PENDING", "SUCCESS", "FAILED"],
+          "description": "Current status of the asynchronous operation",
+          "example": "SUCCESS"
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the operation was created",
+          "example": "2026-07-04T12:00:00.000Z"
+        },
+        "message": {
+          "type": "string",
+          "description": "Only present when status is SUCCESS or FAILED.",
+          "example": "Subscription successful. Confirmation email sent."
         }
       }
     }

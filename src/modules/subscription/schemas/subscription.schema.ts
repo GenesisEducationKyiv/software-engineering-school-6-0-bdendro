@@ -1,5 +1,6 @@
 import * as z from 'zod';
 import { SUBSCRIPTION_ROUTE_PATHS } from '../constants/subscriptions.const';
+import { numericIdSchema } from '../../../../libs/common/utils/validation/common.schema';
 
 const emailSchema = z.string().trim().toLowerCase().max(254).pipe(z.email());
 
@@ -26,3 +27,9 @@ export const subscriptionsQuerySchema = z.strictObject({
 });
 
 export type SubscriptionsQuery = z.infer<typeof subscriptionsQuerySchema>;
+
+export const getSubscriptionOperationParamsSchema = z.strictObject({
+  operationId: numericIdSchema,
+});
+
+export type GetSubscriptionOperationParams = z.infer<typeof getSubscriptionOperationParamsSchema>;

@@ -1,73 +1,142 @@
 import { NotFoundError } from '../../../libs/common/utils/errors/custom-errors';
-import type { GithubServiceInterface, GithubRelease } from '../github/index';
 import { SubscriptionRepositoryInterface } from './interfaces/subscription.repository.interface';
 import { SubscriptionService } from './subscription.service';
 import { SubscribeBody } from './schemas/subscription.schema';
-import { Subscription } from './types/subscription';
-import { SubscriptionEventProducerInterface } from './interfaces/subscription-event.producer';
+import { Subscription, SubscriptionWithRepository } from './types/subscription';
+import {
+  SubscriptionEventProducerInterface,
+  SubscriptionRepositoryReleaseEventProducerInterface,
+} from './interfaces/subscription-event.producer';
+import { RepositoryRepositoryReadableInterface, SubscriptionRepository } from '../repository';
+import { SubscribeSagaRepository } from './saga/interfaces/subscribe-saga.repository.interface';
+import { SubscribeSagaCommandProducer } from './saga/subscribe-saga-command.producer';
+import { RepositoryReleaseDetectedEvent } from './schemas/repository-release.schema';
+import { SubscribeSaga } from './saga/types/subscribe-saga';
+import { SUBSCRIPTION_OPERATION_STATUSES } from './constants/subscriptions.const';
+import {
+  SUBSCRIBE_SAGA_ERROR_REASON,
+  SUBSCRIBE_SAGA_STATES,
+} from './saga/constants/subscribe-saga.const';
 
 describe('SubscriptionService', () => {
   let subscriptionService: SubscriptionService;
   let subscriptionRepository: jest.Mocked<SubscriptionRepositoryInterface>;
-  let subscriptionEventProducer: jest.Mocked<SubscriptionEventProducerInterface>;
-  let githubService: jest.Mocked<GithubServiceInterface>;
+  let repositoryRepository: jest.Mocked<RepositoryRepositoryReadableInterface>;
+  let subscriptionEventProducer: jest.Mocked<
+    SubscriptionEventProducerInterface & SubscriptionRepositoryReleaseEventProducerInterface
+  >;
+  let subscribeSagaRepository: jest.Mocked<SubscribeSagaRepository>;
+  let subscribeSagaCommandProducer: jest.Mocked<SubscribeSagaCommandProducer>;
 
-  const email = 'test@example.com';
-  const repo = 'owner/repo';
-  const token = 'test-token';
+  const testEmail = 'test@example.com';
+  const testRepoName = 'owner/repo';
+  const testToken = 'test-token';
   const baseSubscriptionUrl = 'http://localhost:3000/api';
 
-  const subscribeBody: SubscribeBody = {
+  const createSubscribeInput = (email: string, repo: string): SubscribeBody => ({
     email,
     repo,
-  };
+  });
 
-  const release: GithubRelease = {
+  const createRepository = (
+    overrides: Partial<SubscriptionRepository> = {},
+  ): SubscriptionRepository => ({
     id: 1,
-    repoName: repo,
-    name: 'name',
-    tagName: 'v1.2.3',
-    htmlUrl: 'https://github.com/owner/repo/releases/tag/v1.2.3',
-    publishedAt: '2026-04-12T10:00:00.000Z',
-  };
-
-  const createSubscription = (overrides: Partial<Subscription> = {}): Subscription => ({
-    id: 1,
-    email,
-    repo,
-    token,
-    confirmed: false,
+    repo: testRepoName,
     lastSeenTag: 'v1.0.0',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     ...overrides,
   });
 
+  const createRepositoryRelease = (
+    overrides: Partial<RepositoryReleaseDetectedEvent> = {},
+  ): RepositoryReleaseDetectedEvent => ({
+    id: 1,
+    repoName: testRepoName,
+    name: 'name',
+    tagName: 'v1.2.3',
+    htmlUrl: `https://github.com/${testRepoName}/releases/tag/v1.2.3`,
+    publishedAt: '2026-04-12T10:00:00.000Z',
+    ...overrides,
+  });
+
+  const createSubscription = (overrides: Partial<Subscription> = {}): Subscription => ({
+    id: 1,
+    repositoryId: 1,
+    email: testEmail,
+    token: testToken,
+    confirmed: false,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    ...overrides,
+  });
+
+  const createSubscribeSaga = (overrides: Partial<SubscribeSaga> = {}): SubscribeSaga => ({
+    id: 1,
+    email: testEmail,
+    repoName: testRepoName,
+    state: 'STARTED',
+    subscriptionId: null,
+    repoId: null,
+    errorReason: null,
+    errorMessage: null,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    ...overrides,
+  });
+
+  const concatSubscriptionWithRepository = (
+    subscription: Subscription,
+    repository: SubscriptionRepository,
+  ): SubscriptionWithRepository => ({
+    ...subscription,
+    repositoryId: repository.id,
+    repository,
+  });
+
   beforeAll(() => {
     subscriptionRepository = {
-      getConfirmedSubscriptions: jest.fn(),
-      deleteUnconfirmed: jest.fn(),
-      updateByToken: jest.fn(),
-      create: jest.fn(),
-      deleteByToken: jest.fn(),
-      getSubscriptionsByEmail: jest.fn(),
       getSubscriptionByToken: jest.fn(),
+      getConfirmedSubscriptions: jest.fn(),
+      getSubscriptionsWithRepoByEmail: jest.fn(),
+      getSubscriptionsByRepo: jest.fn(),
+      create: jest.fn(),
+      confirmByToken: jest.fn(),
+      updateByToken: jest.fn(),
+      deleteByToken: jest.fn(),
+      deleteUnconfirmed: jest.fn(),
+    };
+
+    repositoryRepository = {
+      getByRepoName: jest.fn(),
     };
 
     subscriptionEventProducer = {
       produceSubscriptionConfirmed: jest.fn(),
       produceSubscriptionCreated: jest.fn(),
       produceSubscriptionUnsubscribed: jest.fn(),
-    } as jest.Mocked<SubscriptionEventProducerInterface>;
+      produceSubscriptionRepositoryRelease: jest.fn(),
+    };
 
-    githubService = {
-      isRepositoryExists: jest.fn(),
-      getLastRelease: jest.fn(),
-    } as jest.Mocked<GithubServiceInterface>;
+    subscribeSagaRepository = {
+      getById: jest.fn(),
+      create: jest.fn(),
+      markRepoTracked: jest.fn(),
+      markCompleted: jest.fn(),
+      markFailed: jest.fn(),
+      markCompensated: jest.fn(),
+    };
+
+    subscribeSagaCommandProducer = {
+      produceTrackRepo: jest.fn(),
+      produceUntrackRepo: jest.fn(),
+    } as unknown as jest.Mocked<SubscribeSagaCommandProducer>;
 
     subscriptionService = new SubscriptionService(
       subscriptionRepository,
+      repositoryRepository,
       subscriptionEventProducer,
-      githubService,
+      subscribeSagaRepository,
+      subscribeSagaCommandProducer,
       baseSubscriptionUrl,
     );
   });
@@ -77,240 +146,378 @@ describe('SubscriptionService', () => {
   });
 
   describe('getConfirmedSubscriptions', () => {
-    const subscriptions = [
-      createSubscription(),
-      createSubscription({
-        id: 2,
-        email: 'second@example.com',
-        repo: 'owner/second-repo',
-      }),
-    ];
-
     it('should return all confirmed subscriptions', async () => {
+      const subscriptions = [
+        createSubscription({ confirmed: true }),
+        createSubscription({ id: 2, email: 'second@example.com', confirmed: true }),
+      ];
+
       subscriptionRepository.getConfirmedSubscriptions.mockResolvedValue(subscriptions);
 
       const result = await subscriptionService.getConfirmedSubscriptions();
 
-      expect(result).toEqual(subscriptions);
+      expect(subscriptionRepository.getConfirmedSubscriptions).toHaveBeenCalledTimes(1);
+      expect(subscriptionRepository.getConfirmedSubscriptions).toHaveBeenCalledWith();
+      expect(result).toStrictEqual(subscriptions);
     });
   });
 
-  describe('deleteUnconfirmed', () => {
-    const expirationTimeInMs = 600_000;
-
-    it('should delete unconfirmed subscriptions', async () => {
-      subscriptionRepository.deleteUnconfirmed.mockResolvedValue(3);
-
-      const result = await subscriptionService.deleteUnconfirmed(expirationTimeInMs);
-
-      expect(subscriptionRepository.deleteUnconfirmed).toHaveBeenCalledWith(expirationTimeInMs);
-      expect(result).toBe(3);
-    });
-  });
-
-  describe('updateLastSeenTagByToken', () => {
-    const updatedSubscription = createSubscription({
-      confirmed: true,
-      lastSeenTag: 'v2.0.0',
-    });
-
-    it('should update last seen tag and return subscription', async () => {
-      subscriptionRepository.updateByToken.mockResolvedValue(updatedSubscription);
-      const lastSeenTag = 'v2.0.0';
-
-      const result = await subscriptionService.updateLastSeenTagByToken(token, lastSeenTag);
-
-      expect(subscriptionRepository.updateByToken).toHaveBeenCalledWith(token, {
-        lastSeenTag,
-      });
-      expect(result).toEqual({
-        ...updatedSubscription,
-        token,
-        lastSeenTag,
-      });
-    });
-
-    it('should throw NotFoundError when subscription is not found', async () => {
-      subscriptionRepository.updateByToken.mockResolvedValue(null);
-
-      await expect(subscriptionService.updateLastSeenTagByToken(token, 'v2.0.0')).rejects.toThrow(
-        NotFoundError,
+  describe('getSubscriptionsWithRepoByEmail', () => {
+    it('should return subscriptions with populated repository by email', async () => {
+      const email = testEmail;
+      const subscription = createSubscription({ email });
+      const relatedRepository = createRepository();
+      const subscriptionWithRepo = concatSubscriptionWithRepository(
+        subscription,
+        relatedRepository,
       );
 
-      expect(subscriptionRepository.updateByToken).toHaveBeenCalledWith(token, {
-        lastSeenTag: 'v2.0.0',
+      subscriptionRepository.getSubscriptionsWithRepoByEmail.mockResolvedValue([
+        subscriptionWithRepo,
+      ]);
+
+      const result = await subscriptionService.getSubscriptionsWithRepoByEmail(email);
+
+      expect(subscriptionRepository.getSubscriptionsWithRepoByEmail).toHaveBeenCalledTimes(1);
+      expect(subscriptionRepository.getSubscriptionsWithRepoByEmail).toHaveBeenCalledWith(email);
+      expect(result).toStrictEqual([subscriptionWithRepo]);
+    });
+  });
+
+  describe('getSubscriptionsByRepo', () => {
+    it('should return subscriptions by repository name', async () => {
+      const targetRepo = 'target/repo';
+      const subscriptions = [createSubscription({ repositoryId: 2 })];
+
+      subscriptionRepository.getSubscriptionsByRepo.mockResolvedValue(subscriptions);
+
+      const result = await subscriptionService.getSubscriptionsByRepo(targetRepo);
+
+      expect(subscriptionRepository.getSubscriptionsByRepo).toHaveBeenCalledTimes(1);
+      expect(subscriptionRepository.getSubscriptionsByRepo).toHaveBeenCalledWith(targetRepo);
+      expect(result).toStrictEqual(subscriptions);
+    });
+  });
+
+  describe('createSubscription', () => {
+    it('should save subscription with generated token and dispatch creation event', async () => {
+      const email = testEmail;
+      const repoId = 5;
+      const repoName = testRepoName;
+      const generatedSubscription = createSubscription({
+        email,
+        repositoryId: repoId,
       });
+
+      subscriptionRepository.create.mockResolvedValue(generatedSubscription);
+
+      const result = await subscriptionService.createSubscription(email, repoId, repoName);
+
+      expect(subscriptionRepository.create).toHaveBeenCalledTimes(1);
+      expect(subscriptionRepository.create).toHaveBeenCalledWith({
+        email,
+        repositoryId: repoId,
+        token: expect.any(String),
+      });
+      expect(subscriptionEventProducer.produceSubscriptionCreated).toHaveBeenCalledTimes(1);
+      expect(subscriptionEventProducer.produceSubscriptionCreated).toHaveBeenCalledWith(
+        email,
+        expect.stringContaining(generatedSubscription.token),
+        repoName,
+      );
+      expect(result).toStrictEqual(generatedSubscription);
     });
   });
 
   describe('subscribe', () => {
-    it('should create subscription with release tag and send confirmation email', async () => {
-      githubService.isRepositoryExists.mockResolvedValue(true);
-      githubService.getLastRelease.mockResolvedValue(release);
+    it('should call createSubscription and return SUCCESS status when repository exists', async () => {
+      const existingRepository = createRepository();
+      const newSubscription = createSubscription();
+      const subscribeInput = createSubscribeInput(newSubscription.email, existingRepository.repo);
 
-      await subscriptionService.subscribe(subscribeBody);
+      repositoryRepository.getByRepoName.mockResolvedValue(existingRepository);
 
-      expect(githubService.isRepositoryExists).toHaveBeenCalledWith(repo);
-      expect(githubService.getLastRelease).toHaveBeenCalledWith(repo);
+      const createSubscriptionSpy = jest
+        .spyOn(subscriptionService, 'createSubscription')
+        .mockResolvedValue(newSubscription);
 
-      expect(subscriptionRepository.create).toHaveBeenCalledWith(
-        {
-          ...subscribeBody,
-          lastSeenTag: release.tagName,
-        },
-        expect.any(String),
+      const result = await subscriptionService.subscribe(subscribeInput);
+
+      expect(repositoryRepository.getByRepoName).toHaveBeenCalledTimes(1);
+      expect(repositoryRepository.getByRepoName).toHaveBeenCalledWith(subscribeInput.repo);
+
+      expect(createSubscriptionSpy).toHaveBeenCalledTimes(1);
+      expect(createSubscriptionSpy).toHaveBeenCalledWith(
+        subscribeInput.email,
+        existingRepository.id,
+        subscribeInput.repo,
       );
 
-      expect(subscriptionEventProducer.produceSubscriptionCreated).toHaveBeenCalledTimes(1);
-      expect(subscriptionEventProducer.produceSubscriptionCreated).toHaveBeenCalledWith(
-        email,
-        expect.any(String),
-        repo,
-      );
+      expect(subscribeSagaRepository.create).not.toHaveBeenCalled();
+      expect(subscribeSagaCommandProducer.produceTrackRepo).not.toHaveBeenCalled();
 
-      const createdToken = subscriptionRepository.create.mock.calls[0][1];
-      const emailedToken = subscriptionEventProducer.produceSubscriptionCreated.mock.calls[0][1];
+      expect(result).toStrictEqual({ status: SUBSCRIPTION_OPERATION_STATUSES.SUCCESS });
 
-      expect(typeof createdToken).toBe('string');
-      expect(createdToken.length).toBeGreaterThan(0);
-      expect(emailedToken).toContain(createdToken);
+      createSubscriptionSpy.mockRestore();
     });
 
-    it('should throw NotFoundError when repository does not exist', async () => {
-      githubService.isRepositoryExists.mockResolvedValue(false);
+    it('should initialize saga, dispatch track command, and return PENDING status when repository does not exist', async () => {
+      const email = testEmail;
+      const repo = testRepoName;
+      const subscribeInput = createSubscribeInput(email, repo);
+      const createdSaga = createSubscribeSaga();
 
-      await expect(subscriptionService.subscribe(subscribeBody)).rejects.toThrow(NotFoundError);
+      repositoryRepository.getByRepoName.mockResolvedValue(null);
+      subscribeSagaRepository.create.mockResolvedValue(createdSaga);
 
-      expect(githubService.isRepositoryExists).toHaveBeenCalledWith(repo);
-      expect(githubService.getLastRelease).not.toHaveBeenCalled();
-      expect(subscriptionRepository.create).not.toHaveBeenCalled();
-      expect(subscriptionEventProducer.produceSubscriptionCreated).not.toHaveBeenCalled();
-    });
+      const createSubscriptionSpy = jest.spyOn(subscriptionService, 'createSubscription');
 
-    it('should create subscription with null lastSeenTag when release does not exist', async () => {
-      githubService.isRepositoryExists.mockResolvedValue(true);
-      githubService.getLastRelease.mockResolvedValue(null);
+      const result = await subscriptionService.subscribe(subscribeInput);
 
-      await subscriptionService.subscribe(subscribeBody);
+      expect(repositoryRepository.getByRepoName).toHaveBeenCalledTimes(1);
+      expect(repositoryRepository.getByRepoName).toHaveBeenCalledWith(subscribeInput.repo);
 
-      expect(subscriptionRepository.create).toHaveBeenCalledWith(
-        {
-          ...subscribeBody,
-          lastSeenTag: null,
-        },
-        expect.any(String),
+      expect(createSubscriptionSpy).not.toHaveBeenCalled();
+
+      expect(subscribeSagaRepository.create).toHaveBeenCalledTimes(1);
+      expect(subscribeSagaRepository.create).toHaveBeenCalledWith({
+        email: subscribeInput.email,
+        repoName: subscribeInput.repo,
+      });
+
+      expect(subscribeSagaCommandProducer.produceTrackRepo).toHaveBeenCalledTimes(1);
+      expect(subscribeSagaCommandProducer.produceTrackRepo).toHaveBeenCalledWith(
+        subscribeInput.repo,
+        { correlationId: createdSaga.id },
       );
 
-      expect(subscriptionEventProducer.produceSubscriptionCreated).toHaveBeenCalledTimes(1);
-      expect(subscriptionEventProducer.produceSubscriptionCreated).toHaveBeenCalledWith(
-        email,
-        expect.any(String),
-        repo,
-      );
+      expect(result).toStrictEqual({
+        status: SUBSCRIPTION_OPERATION_STATUSES.PENDING,
+        operationId: createdSaga.id,
+      });
 
-      const createdToken = subscriptionRepository.create.mock.calls[0][1];
-      const emailedToken = subscriptionEventProducer.produceSubscriptionCreated.mock.calls[0][1];
-
-      expect(typeof createdToken).toBe('string');
-      expect(createdToken.length).toBeGreaterThan(0);
-      expect(emailedToken).toContain(createdToken);
+      createSubscriptionSpy.mockRestore();
     });
   });
 
   describe('confirm', () => {
-    it('should confirm subscription and send confirmation success email', async () => {
-      const unconfirmedSubscription = createSubscription();
+    it('should confirm subscription and dispatch confirmed event when valid unconfirmed token is provided', async () => {
+      const token = testToken;
+      const relatedRepository = createRepository();
+      const unconfirmedSubscription = createSubscription({ token, confirmed: false });
       const confirmedSubscription: Subscription = { ...unconfirmedSubscription, confirmed: true };
+      const confirmedWithRepo = concatSubscriptionWithRepository(
+        confirmedSubscription,
+        relatedRepository,
+      );
 
       subscriptionRepository.getSubscriptionByToken.mockResolvedValue(unconfirmedSubscription);
-      subscriptionRepository.updateByToken.mockResolvedValue(confirmedSubscription);
+      subscriptionRepository.confirmByToken.mockResolvedValue(confirmedWithRepo);
 
       await subscriptionService.confirm(token);
 
       expect(subscriptionRepository.getSubscriptionByToken).toHaveBeenCalledTimes(1);
       expect(subscriptionRepository.getSubscriptionByToken).toHaveBeenCalledWith(token);
-      expect(subscriptionRepository.updateByToken).toHaveBeenCalledTimes(1);
-      expect(subscriptionRepository.updateByToken).toHaveBeenCalledWith(token, {
-        confirmed: true,
-      });
+
+      expect(subscriptionRepository.confirmByToken).toHaveBeenCalledTimes(1);
+      expect(subscriptionRepository.confirmByToken).toHaveBeenCalledWith(token);
+
       expect(subscriptionEventProducer.produceSubscriptionConfirmed).toHaveBeenCalledTimes(1);
       expect(subscriptionEventProducer.produceSubscriptionConfirmed).toHaveBeenCalledWith(
-        confirmedSubscription.email,
+        confirmedWithRepo.email,
         expect.stringContaining(token),
-        confirmedSubscription.repo,
+        confirmedWithRepo.repository.repo,
       );
     });
 
-    it('should not update subscription or send email if subscription is already confirmed', async () => {
-      const confirmedSubscription = createSubscription({ confirmed: true });
+    it('should exit early without updates and events when subscription is already confirmed', async () => {
+      const token = testToken;
+      const confirmedSubscription = createSubscription({ token, confirmed: true });
 
       subscriptionRepository.getSubscriptionByToken.mockResolvedValue(confirmedSubscription);
 
       await subscriptionService.confirm(token);
 
       expect(subscriptionRepository.getSubscriptionByToken).toHaveBeenCalledTimes(1);
-      expect(subscriptionRepository.getSubscriptionByToken).toHaveBeenCalledWith(
-        expect.stringContaining(token),
-      );
-      expect(subscriptionRepository.updateByToken).not.toHaveBeenCalled();
+      expect(subscriptionRepository.getSubscriptionByToken).toHaveBeenCalledWith(token);
+
+      expect(subscriptionRepository.confirmByToken).not.toHaveBeenCalled();
       expect(subscriptionEventProducer.produceSubscriptionConfirmed).not.toHaveBeenCalled();
     });
 
-    it('should throw NotFoundError when subscription to confirm is not found', async () => {
+    it('should throw NotFoundError when token does not match any subscription', async () => {
+      const invalidToken = 'invalid-token';
+
       subscriptionRepository.getSubscriptionByToken.mockResolvedValue(null);
 
-      await expect(subscriptionService.confirm(token)).rejects.toThrow(NotFoundError);
-      expect(subscriptionRepository.updateByToken).not.toHaveBeenCalled();
+      await expect(subscriptionService.confirm(invalidToken)).rejects.toThrow(NotFoundError);
+
+      expect(subscriptionRepository.getSubscriptionByToken).toHaveBeenCalledTimes(1);
+      expect(subscriptionRepository.getSubscriptionByToken).toHaveBeenCalledWith(invalidToken);
+
+      expect(subscriptionRepository.confirmByToken).not.toHaveBeenCalled();
       expect(subscriptionEventProducer.produceSubscriptionConfirmed).not.toHaveBeenCalled();
     });
   });
 
   describe('unsubscribe', () => {
-    it('should delete subscription and send unsubscribe success email', async () => {
-      const deletedSubscription = createSubscription();
+    it('should delete subscription by token and dispatch unsubscribed event', async () => {
+      const token = testToken;
+      const deletedSubscription = createSubscription({ token });
+      const relatedRepository = createRepository();
+      const deletedWithRepo = concatSubscriptionWithRepository(
+        deletedSubscription,
+        relatedRepository,
+      );
 
-      subscriptionRepository.deleteByToken.mockResolvedValue(deletedSubscription);
+      subscriptionRepository.deleteByToken.mockResolvedValue(deletedWithRepo);
 
       await subscriptionService.unsubscribe(token);
 
+      expect(subscriptionRepository.deleteByToken).toHaveBeenCalledTimes(1);
       expect(subscriptionRepository.deleteByToken).toHaveBeenCalledWith(token);
+
       expect(subscriptionEventProducer.produceSubscriptionUnsubscribed).toHaveBeenCalledTimes(1);
       expect(subscriptionEventProducer.produceSubscriptionUnsubscribed).toHaveBeenCalledWith(
-        deletedSubscription.email,
-        deletedSubscription.repo,
+        deletedWithRepo.email,
+        deletedWithRepo.repository.repo,
       );
-    });
-
-    it('should throw NotFoundError when subscription to unsubscribe is not found', async () => {
-      subscriptionRepository.deleteByToken.mockResolvedValue(null);
-
-      await expect(subscriptionService.unsubscribe(token)).rejects.toThrow(NotFoundError);
-      expect(subscriptionEventProducer.produceSubscriptionUnsubscribed).not.toHaveBeenCalled();
     });
   });
 
-  describe('getSubscriptionsByEmail', () => {
-    it('should return subscriptions', async () => {
-      const subscriptions: Subscription[] = [
-        createSubscription({
-          id: 1,
-          confirmed: true,
-          lastSeenTag: 'v1.0.0',
-        }),
-        createSubscription({
-          id: 2,
-          repo: 'owner/second-repo',
-          confirmed: false,
-          lastSeenTag: null,
-        }),
-      ];
+  describe('deleteUnconfirmed', () => {
+    it('should delete unconfirmed subscriptions older than specified expiration time and return count', async () => {
+      const expirationTimeInMs = 600_000;
+      const deletedCount = 5;
 
-      subscriptionRepository.getSubscriptionsByEmail.mockResolvedValue(subscriptions);
+      subscriptionRepository.deleteUnconfirmed.mockResolvedValue(deletedCount);
 
-      const result = await subscriptionService.getSubscriptionsByEmail(email);
+      const result = await subscriptionService.deleteUnconfirmed(expirationTimeInMs);
 
-      expect(subscriptionRepository.getSubscriptionsByEmail).toHaveBeenCalledWith(email);
-      expect(result).toEqual(subscriptions);
+      expect(subscriptionRepository.deleteUnconfirmed).toHaveBeenCalledTimes(1);
+      expect(subscriptionRepository.deleteUnconfirmed).toHaveBeenCalledWith(expirationTimeInMs);
+      expect(result).toStrictEqual(deletedCount);
+    });
+  });
+
+  describe('processRepositoryRelease', () => {
+    it('should retrieve subscriptions by repository and dispatch release event for each', async () => {
+      const release = createRepositoryRelease();
+      const subscriptionOne = createSubscription({ email: 'first@example.com', token: 'token-1' });
+      const subscriptionTwo = createSubscription({ email: 'second@example.com', token: 'token-2' });
+      const subscriptions = [subscriptionOne, subscriptionTwo];
+
+      const getSubscriptionsByRepoSpy = jest
+        .spyOn(subscriptionService, 'getSubscriptionsByRepo')
+        .mockResolvedValue(subscriptions);
+
+      await subscriptionService.processRepositoryRelease(release);
+
+      expect(getSubscriptionsByRepoSpy).toHaveBeenCalledTimes(1);
+      expect(getSubscriptionsByRepoSpy).toHaveBeenCalledWith(release.repoName);
+
+      expect(subscriptionEventProducer.produceSubscriptionRepositoryRelease).toHaveBeenCalledTimes(
+        2,
+      );
+      expect(
+        subscriptionEventProducer.produceSubscriptionRepositoryRelease,
+      ).toHaveBeenNthCalledWith(
+        1,
+        subscriptionOne.email,
+        release,
+        expect.stringContaining(subscriptionOne.token),
+      );
+      expect(
+        subscriptionEventProducer.produceSubscriptionRepositoryRelease,
+      ).toHaveBeenNthCalledWith(
+        2,
+        subscriptionTwo.email,
+        release,
+        expect.stringContaining(subscriptionTwo.token),
+      );
+
+      getSubscriptionsByRepoSpy.mockRestore();
+    });
+  });
+
+  describe('getSubscriptionOperation', () => {
+    it('should return null when saga does not exist', async () => {
+      const operationId = 999;
+      subscribeSagaRepository.getById.mockResolvedValue(null);
+
+      const result = await subscriptionService.getSubscriptionOperation(operationId);
+
+      expect(subscribeSagaRepository.getById).toHaveBeenCalledTimes(1);
+      expect(subscribeSagaRepository.getById).toHaveBeenCalledWith(operationId);
+      expect(result).toBeNull();
+    });
+
+    it.each([SUBSCRIBE_SAGA_STATES.STARTED, SUBSCRIBE_SAGA_STATES.REPOSITORY_TRACKED])(
+      'should return PENDING status when saga state is %s',
+      async (state) => {
+        const saga = createSubscribeSaga({ state });
+        subscribeSagaRepository.getById.mockResolvedValue(saga);
+
+        const result = await subscriptionService.getSubscriptionOperation(saga.id);
+
+        expect(subscribeSagaRepository.getById).toHaveBeenCalledTimes(1);
+        expect(subscribeSagaRepository.getById).toHaveBeenCalledWith(saga.id);
+        expect(result).toStrictEqual({
+          status: SUBSCRIPTION_OPERATION_STATUSES.PENDING,
+          startedAt: saga.createdAt,
+        });
+      },
+    );
+
+    it.each([SUBSCRIBE_SAGA_STATES.FAILED, SUBSCRIBE_SAGA_STATES.COMPENSATED])(
+      'should return FAILED status with error details when saga state is %s',
+      async (state) => {
+        const saga = createSubscribeSaga({
+          state,
+          errorReason: SUBSCRIBE_SAGA_ERROR_REASON.GITHUB_REPO_NOT_FOUND,
+          errorMessage: 'Repo not found',
+        });
+        subscribeSagaRepository.getById.mockResolvedValue(saga);
+
+        const result = await subscriptionService.getSubscriptionOperation(saga.id);
+
+        expect(result).toStrictEqual({
+          status: SUBSCRIPTION_OPERATION_STATUSES.FAILED,
+          startedAt: saga.createdAt,
+          errorReason: saga.errorReason,
+          errorMessage: saga.errorMessage,
+        });
+      },
+    );
+
+    it('should fallback to UNKNOWN error reason when reason is null in error states', async () => {
+      const saga = createSubscribeSaga({
+        state: SUBSCRIBE_SAGA_STATES.FAILED,
+        errorReason: null,
+        errorMessage: null,
+      });
+      subscribeSagaRepository.getById.mockResolvedValue(saga);
+
+      const result = await subscriptionService.getSubscriptionOperation(saga.id);
+
+      expect(result).toStrictEqual({
+        status: SUBSCRIPTION_OPERATION_STATUSES.FAILED,
+        startedAt: saga.createdAt,
+        errorReason: SUBSCRIBE_SAGA_ERROR_REASON.UNKNOWN,
+        errorMessage: null,
+      });
+    });
+
+    it('should return SUCCESS status for any other state (e.g., COMPLETED)', async () => {
+      const saga = createSubscribeSaga({ state: SUBSCRIBE_SAGA_STATES.COMPLETED });
+      subscribeSagaRepository.getById.mockResolvedValue(saga);
+
+      const result = await subscriptionService.getSubscriptionOperation(saga.id);
+
+      expect(result).toStrictEqual({
+        status: SUBSCRIPTION_OPERATION_STATUSES.SUCCESS,
+        startedAt: saga.createdAt,
+      });
     });
   });
 });

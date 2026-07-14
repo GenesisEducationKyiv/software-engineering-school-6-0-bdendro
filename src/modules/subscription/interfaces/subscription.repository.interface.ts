@@ -1,15 +1,14 @@
-import { Subscription } from '../types/subscription';
-import { SubscribeBody } from '../schemas/subscription.schema';
-import { SubscriptionUpdateInput } from '../types/subscription-repository';
-
-export type SubscribeReq = SubscribeBody & { lastSeenTag: string | null };
+import { Subscription, SubscriptionWithRepository } from '../types/subscription';
+import { SubscriptionCreateInput, SubscriptionUpdateInput } from '../types/subscription-repository';
 
 export interface SubscriptionRepositoryInterface {
-  getConfirmedSubscriptions(): Promise<Subscription[]>;
-  getSubscriptionsByEmail(email: string): Promise<Subscription[]>;
   getSubscriptionByToken(token: string): Promise<Subscription | null>;
-  create(subscribeReq: SubscribeReq, token: string): Promise<Subscription>;
-  updateByToken(token: string, update: SubscriptionUpdateInput): Promise<Subscription | null>;
-  deleteByToken(token: string): Promise<Subscription | null>;
+  getConfirmedSubscriptions(): Promise<Subscription[]>;
+  getSubscriptionsWithRepoByEmail(email: string): Promise<SubscriptionWithRepository[]>;
+  getSubscriptionsByRepo(repo: string): Promise<Subscription[]>;
+  create(subscriptionInput: SubscriptionCreateInput): Promise<Subscription>;
+  updateByToken(token: string, update: SubscriptionUpdateInput): Promise<Subscription>;
+  confirmByToken(token: string): Promise<SubscriptionWithRepository>;
+  deleteByToken(token: string): Promise<SubscriptionWithRepository>;
   deleteUnconfirmed(expirationTimeInMs: number): Promise<number>;
 }

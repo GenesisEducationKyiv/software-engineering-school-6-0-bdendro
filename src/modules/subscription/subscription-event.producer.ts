@@ -3,18 +3,18 @@ import {
   SubscriptionCreatedEvent,
   SubscriptionRepositoryReleasedEvent,
   SubscriptionUnsubscribedEvent,
-} from '../../../libs/contracts/main/events/main.produce.contract';
-import { SUBSCRIPTION_EVENT_ROUTING_KEYS } from '../../../libs/contracts/main/events/routing-keys';
+} from '../../../libs/contracts/main/messaging/subscription.events';
+import { SUBSCRIPTION_EVENT_ROUTING_KEYS } from '../../../libs/contracts/main/messaging/routing-keys';
 import type { MessageProducerInterface } from '../../../libs/infrastructure/message-broker/interfaces/message.producer.interface';
-import { GithubRelease } from '../github';
 import {
-  RepositoryReleaseEventProducerInterface,
+  SubscriptionRepositoryReleaseEventProducerInterface,
   SubscriptionEventProducerInterface,
 } from './interfaces/subscription-event.producer';
 import { SubscriptionProducerMapper } from './mappers/subscription-producer.mapper';
+import { RepositoryReleaseDetectedEvent } from './schemas/repository-release.schema';
 
 export class SubscriptionEventProducer
-  implements SubscriptionEventProducerInterface, RepositoryReleaseEventProducerInterface
+  implements SubscriptionEventProducerInterface, SubscriptionRepositoryReleaseEventProducerInterface
 {
   constructor(
     private readonly messageProducer: MessageProducerInterface,
@@ -46,7 +46,7 @@ export class SubscriptionEventProducer
 
   async produceSubscriptionRepositoryRelease(
     email: string,
-    release: GithubRelease,
+    release: RepositoryReleaseDetectedEvent,
     unsubscribeUrl: string,
   ): Promise<void> {
     const payload: SubscriptionRepositoryReleasedEvent = {

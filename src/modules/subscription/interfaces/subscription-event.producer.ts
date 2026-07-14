@@ -1,4 +1,4 @@
-import { GithubRelease } from '../../github';
+import { RepositoryReleaseDetectedEvent } from '../schemas/repository-release.schema';
 
 export interface SubscriptionEventProducerInterface {
   produceSubscriptionCreated(email: string, confirmationUrl: string, repo: string): Promise<void>;
@@ -6,10 +6,10 @@ export interface SubscriptionEventProducerInterface {
   produceSubscriptionUnsubscribed(email: string, repo: string): Promise<void>;
 }
 
-export interface RepositoryReleaseEventProducerInterface {
+export interface SubscriptionRepositoryReleaseEventProducerInterface {
   produceSubscriptionRepositoryRelease(
     email: string,
-    release: GithubRelease,
+    release: RepositoryReleaseDetectedEvent,
     unsubscribeUrl: string,
   ): Promise<void>;
 }

@@ -1,19 +1,42 @@
 import { randomUUID } from 'node:crypto';
 import { SubscriptionRepositoryInterface } from './interfaces/subscription.repository.interface';
-import { SubscriptionServiceInterface } from './interfaces/subscription.service.interface';
+import {
+  SubscribeResult,
+  SubscriptionServiceInterface,
+} from './interfaces/subscription.service.interface';
 import { SubscribeBody } from './schemas/subscription.schema';
 import { NotFoundError } from '../../../libs/common/utils/errors/custom-errors';
 import { SUBSCRIPTION_ERROR_MESSAGES } from './constants/error-messages';
-import { GithubServiceInterface, GITHUB_ERROR_MESSAGES } from '../github/index';
-import { Subscription } from './types/subscription';
+import {
+  Subscription,
+  SubscriptionOperation,
+  SubscriptionWithRepository,
+} from './types/subscription';
 import { buildConfirmationUrl, buildUnsubscribeUrl } from './utils/build-url';
-import { SubscriptionEventProducerInterface } from './interfaces/subscription-event.producer';
+import {
+  SubscriptionEventProducerInterface,
+  SubscriptionRepositoryReleaseEventProducerInterface,
+} from './interfaces/subscription-event.producer';
+import { RepositoryReleaseDetectedEvent } from './schemas/repository-release.schema';
+import { RepositoryRepositoryReadableInterface } from '../repository';
+import { SUBSCRIPTION_OPERATION_STATUSES } from './constants/subscriptions.const';
+import { SubscribeSagaRepository } from './saga/interfaces/subscribe-saga.repository.interface';
+import { SubscribeSagaCommandProducer } from './saga/subscribe-saga-command.producer';
+import {
+  SUBSCRIBE_SAGA_ERROR_REASON,
+  SUBSCRIBE_SAGA_STATES,
+} from './saga/constants/subscribe-saga.const';
+
+type SubscriptionEventProducer = SubscriptionEventProducerInterface &
+  SubscriptionRepositoryReleaseEventProducerInterface;
 
 export class SubscriptionService implements SubscriptionServiceInterface {
   constructor(
     private readonly subscriptionRepository: SubscriptionRepositoryInterface,
-    private readonly eventProducer: SubscriptionEventProducerInterface,
-    private readonly githubService: GithubServiceInterface,
+    private readonly subscriptionRepositoryRepository: RepositoryRepositoryReadableInterface,
+    private readonly eventProducer: SubscriptionEventProducer,
+    private readonly subscribeSagaRepository: SubscribeSagaRepository,
+    private readonly subscribeSagaCommandProducer: SubscribeSagaCommandProducer,
     private readonly subscriptionBaseUrl: string,
   ) {}
 
@@ -21,35 +44,51 @@ export class SubscriptionService implements SubscriptionServiceInterface {
     return this.subscriptionRepository.getConfirmedSubscriptions();
   }
 
-  async deleteUnconfirmed(expirationTimeInMs: number): Promise<number> {
-    return this.subscriptionRepository.deleteUnconfirmed(expirationTimeInMs);
+  async getSubscriptionsWithRepoByEmail(email: string): Promise<SubscriptionWithRepository[]> {
+    return this.subscriptionRepository.getSubscriptionsWithRepoByEmail(email);
   }
 
-  async updateLastSeenTagByToken(token: string, lastSeenTag: string): Promise<Subscription> {
-    const subscription = await this.subscriptionRepository.updateByToken(token, { lastSeenTag });
-    if (!subscription) throw new NotFoundError(SUBSCRIPTION_ERROR_MESSAGES.NOT_FOUND);
+  async getSubscriptionsByRepo(repo: string): Promise<Subscription[]> {
+    return this.subscriptionRepository.getSubscriptionsByRepo(repo);
+  }
+
+  async createSubscription(email: string, repoId: number, repoName: string): Promise<Subscription> {
+    const token = randomUUID();
+
+    const subscription = await this.subscriptionRepository.create({
+      email,
+      repositoryId: repoId,
+      token,
+    });
+
+    const confirmationUrl = buildConfirmationUrl(this.subscriptionBaseUrl, subscription.token);
+    await this.eventProducer.produceSubscriptionCreated(
+      subscription.email,
+      confirmationUrl,
+      repoName,
+    );
 
     return subscription;
   }
 
-  async subscribe(subscribeBody: SubscribeBody): Promise<void> {
-    const isRepoExists = await this.githubService.isRepositoryExists(subscribeBody.repo);
-    if (!isRepoExists) throw new NotFoundError(GITHUB_ERROR_MESSAGES.REPO_NOT_FOUND);
-
-    const release = await this.githubService.getLastRelease(subscribeBody.repo);
-
-    const token = randomUUID();
-    await this.subscriptionRepository.create(
-      { ...subscribeBody, lastSeenTag: release?.tagName || null },
-      token,
-    );
-
-    const confirmationUrl = buildConfirmationUrl(this.subscriptionBaseUrl, token);
-    await this.eventProducer.produceSubscriptionCreated(
-      subscribeBody.email,
-      confirmationUrl,
+  async subscribe(subscribeBody: SubscribeBody): Promise<SubscribeResult> {
+    const repository = await this.subscriptionRepositoryRepository.getByRepoName(
       subscribeBody.repo,
     );
+    if (repository) {
+      await this.createSubscription(subscribeBody.email, repository.id, repository.repo);
+      return { status: SUBSCRIPTION_OPERATION_STATUSES.SUCCESS };
+    }
+
+    const saga = await this.subscribeSagaRepository.create({
+      email: subscribeBody.email,
+      repoName: subscribeBody.repo,
+    });
+
+    await this.subscribeSagaCommandProducer.produceTrackRepo(subscribeBody.repo, {
+      correlationId: saga.id,
+    });
+    return { status: SUBSCRIPTION_OPERATION_STATUSES.PENDING, operationId: saga.id };
   }
 
   async confirm(token: string): Promise<void> {
@@ -58,26 +97,70 @@ export class SubscriptionService implements SubscriptionServiceInterface {
     if (!subscription) throw new NotFoundError(SUBSCRIPTION_ERROR_MESSAGES.NOT_FOUND);
     if (subscription.confirmed) return;
 
-    await this.subscriptionRepository.updateByToken(token, {
-      confirmed: true,
-    });
+    const confirmedSubscription = await this.subscriptionRepository.confirmByToken(token);
 
     const unsubscribeUrl = buildUnsubscribeUrl(this.subscriptionBaseUrl, token);
     await this.eventProducer.produceSubscriptionConfirmed(
-      subscription.email,
+      confirmedSubscription.email,
       unsubscribeUrl,
-      subscription.repo,
+      confirmedSubscription.repository.repo,
     );
   }
 
   async unsubscribe(token: string): Promise<void> {
     const subscription = await this.subscriptionRepository.deleteByToken(token);
-    if (!subscription) throw new NotFoundError(SUBSCRIPTION_ERROR_MESSAGES.NOT_FOUND);
 
-    await this.eventProducer.produceSubscriptionUnsubscribed(subscription.email, subscription.repo);
+    await this.eventProducer.produceSubscriptionUnsubscribed(
+      subscription.email,
+      subscription.repository.repo,
+    );
   }
 
-  async getSubscriptionsByEmail(email: string): Promise<Subscription[]> {
-    return await this.subscriptionRepository.getSubscriptionsByEmail(email);
+  async deleteUnconfirmed(expirationTimeInMs: number): Promise<number> {
+    return this.subscriptionRepository.deleteUnconfirmed(expirationTimeInMs);
+  }
+
+  async processRepositoryRelease(release: RepositoryReleaseDetectedEvent): Promise<void> {
+    const subscriptions = await this.getSubscriptionsByRepo(release.repoName);
+    const eventPromises: Promise<void>[] = [];
+    for (const sub of subscriptions) {
+      eventPromises.push(
+        this.eventProducer.produceSubscriptionRepositoryRelease(
+          sub.email,
+          release,
+          buildUnsubscribeUrl(this.subscriptionBaseUrl, sub.token),
+        ),
+      );
+    }
+    // Will be modified with adding outbox
+    await Promise.all(eventPromises);
+  }
+
+  async getSubscriptionOperation(id: number): Promise<SubscriptionOperation | null> {
+    const saga = await this.subscribeSagaRepository.getById(id);
+    if (!saga) return null;
+
+    switch (saga.state) {
+      case SUBSCRIBE_SAGA_STATES.STARTED:
+      case SUBSCRIBE_SAGA_STATES.REPOSITORY_TRACKED:
+        return {
+          status: SUBSCRIPTION_OPERATION_STATUSES.PENDING,
+          startedAt: saga.createdAt,
+        };
+
+      case SUBSCRIBE_SAGA_STATES.FAILED:
+      case SUBSCRIBE_SAGA_STATES.COMPENSATED:
+        return {
+          errorReason: saga.errorReason ?? SUBSCRIBE_SAGA_ERROR_REASON.UNKNOWN,
+          errorMessage: saga.errorMessage,
+          status: SUBSCRIPTION_OPERATION_STATUSES.FAILED,
+          startedAt: saga.createdAt,
+        };
+      default:
+        return {
+          status: SUBSCRIPTION_OPERATION_STATUSES.SUCCESS,
+          startedAt: saga.createdAt,
+        };
+    }
   }
 }

@@ -15,11 +15,13 @@ async function bootstrap() {
 
   const app = createApp(container);
 
-  container.jobsManager.startJobs();
-
   const server = app.listen(env.APP_PORT, () => {
     logger.info(`Express server is listening on port ${env.APP_PORT}`);
   });
+
+  await container.consumerManager.start();
+
+  container.jobsManager.startJobs();
 
   async function shutdown() {
     logger.info('Shutting down...');
@@ -28,6 +30,8 @@ async function bootstrap() {
     logger.info('HTTP server closed.');
 
     await container.jobsManager.stopJobs();
+
+    await container.consumerManager.stop();
 
     await container.rabbitMqConnection.close();
     logger.info(`RabbitMQ connection successfully closed.`);
