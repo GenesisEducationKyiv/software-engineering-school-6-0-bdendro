@@ -1,0 +1,163 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: github_subscription_api
+    ports:
+      - '5438:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend-net
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: app
+      RABBITMQ_DEFAULT_PASS: app
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    networks:
+      - backend-net
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      target: migration
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/github_subscription_api?schema=public
+    networks:
+      - backend-net
+
+  notification:
+    build:
+      context: .
+      dockerfile: apps/notification/Dockerfile
+      target: production
+    ports:
+      - '${NOTIFICATION_PORT:-3002}:3002'
+    depends_on:
+      rabbitmq:
+        condition: service_started
+    env_file:
+      - path: .env
+    environment:
+      NODE_ENV: production
+      NOTIFICATION_PORT: 3002
+      RABBITMQ_URL: amqp://app:app@rabbitmq:5672
+    logging:
+      options:
+        max-size: '10m'
+        max-file: '5'
+    networks:
+      - backend-net
+
+  tracker:
+    build:
+      context: .
+      dockerfile: apps/tracker/Dockerfile
+      target: production
+    ports:
+      - '${TRACKER_PORT:-3003}:3003'
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+      github:
+        condition: service_started
+    env_file:
+      - path: .env
+    environment:
+      NODE_ENV: production
+      TRACKER_PORT: 3003
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/github_subscription_api?schema=public
+      RABBITMQ_URL: amqp://app:app@rabbitmq:5672
+      GITHUB_SERVICE_URL: github:50051
+    logging:
+      options:
+        max-size: '10m'
+        max-file: '5'
+    networks:
+      - backend-net
+
+  github:
+    build:
+      context: .
+      dockerfile: apps/github/Dockerfile
+      target: production
+    ports:
+      - '${GITHUB_PORT:-3004}:3004'
+      - '${GITHUB_GRPC_PORT:-50051}:50051'
+    depends_on:
+      rabbitmq:
+        condition: service_started
+    env_file:
+      - path: .env
+    environment:
+      NODE_ENV: production
+      GITHUB_PORT: 3004
+      GITHUB_GRPC_PORT: 50051
+    logging:
+      options:
+        max-size: '10m'
+        max-file: '5'
+    networks:
+      - backend-net
+
+  app:
+    build:
+      context: .
+      target: production
+    ports:
+      - '${APP_PORT:-3000}:3000'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_started
+      notification:
+        condition: service_started
+      tracker:
+        condition: service_started
+      github:
+        condition: service_started
+    env_file:
+      - path: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/github_subscription_api?schema=public
+      NOTIFICATION_SERVICE_URL: http://notification:3002
+      RABBITMQ_URL: amqp://app:app@rabbitmq:5672
+    logging:
+      options:
+        max-size: '10m'
+        max-file: '5'
+    networks:
+      - backend-net
+
+volumes:
+  pgdata:
+  rabbitmqdata:
+
+networks:
+  backend-net:
+    external: true

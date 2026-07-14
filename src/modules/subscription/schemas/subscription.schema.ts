@@ -1,0 +1,35 @@
+import * as z from 'zod';
+import { SUBSCRIPTION_ROUTE_PATHS } from '../constants/subscriptions.const';
+import { numericIdSchema } from '../../../../libs/common/utils/validation/common.schema';
+
+const emailSchema = z.string().trim().toLowerCase().max(254).pipe(z.email());
+
+export const subscribeBodySchema = z.strictObject({
+  email: emailSchema,
+  repo: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(140)
+    .regex(/^[^/\s]+\/[^/\s]+$/, 'Repository must be in owner/repo format'),
+});
+
+export type SubscribeBody = z.infer<typeof subscribeBodySchema>;
+
+export const tokenParamsSchema = z.strictObject({
+  [SUBSCRIPTION_ROUTE_PATHS.TOKEN]: z.string().trim().toLowerCase().pipe(z.uuid()),
+});
+
+export type TokenParams = z.infer<typeof tokenParamsSchema>;
+
+export const subscriptionsQuerySchema = z.strictObject({
+  email: emailSchema,
+});
+
+export type SubscriptionsQuery = z.infer<typeof subscriptionsQuerySchema>;
+
+export const getSubscriptionOperationParamsSchema = z.strictObject({
+  operationId: numericIdSchema,
+});
+
+export type GetSubscriptionOperationParams = z.infer<typeof getSubscriptionOperationParamsSchema>;

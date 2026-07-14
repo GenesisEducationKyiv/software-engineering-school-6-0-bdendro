@@ -1,0 +1,30 @@
+{
+  "projects": [
+    {
+      "displayName": "unit",
+      "moduleFileExtensions": ["js", "json", "ts"],
+      "rootDir": ".",
+      "testRegex": ".*\\.spec\\.ts$",
+      "transform": {
+        "^.+\\.(t|j)s$": "ts-jest"
+      },
+      "coverageDirectory": "../coverage",
+      "testEnvironment": "node"
+    },
+    {
+      "displayName": "integration",
+      "moduleFileExtensions": ["js", "json", "ts"],
+      "rootDir": "test/integration",
+      "testRegex": ".*\\.int-spec\\.ts$",
+      "transform": {
+        "^.+\\.(t|j)s$": "ts-jest"
+      },
+      "moduleNameMapper": {
+        "^(\\.{1,2}/.*)\\.js$": "$1"
+      },
+      "coverageDirectory": "../coverage",
+      "testEnvironment": "node",
+      "testTimeout": 30000
+    }
+  ]
+}

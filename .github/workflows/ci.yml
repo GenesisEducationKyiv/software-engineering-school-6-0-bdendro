@@ -1,0 +1,144 @@
+name: Continuous Integration Pipeline
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['**'] # main
+
+env:
+  NODE_ENV: test
+
+  APP_NAME: ${{ vars.APP_NAME }}
+  APP_BASE_URL: ${{ vars.TEST_APP_BASE_URL }}
+  APP_CLIENT_BASE_URL: ${{vars.TEST_APP_CLIENT_BASE_URL}}
+  APP_TIMEZONE: ${{ vars.APP_TIMEZONE }}
+
+  DATABASE_URL: ${{vars.TEST_DATABASE_URL}}
+
+  EMAIL: ${{ secrets.TEST_EMAIL_USER }}
+  EMAIL_PASSWORD: ${{ secrets.TEST_EMAIL_PASSWORD }}
+  EMAIL_HOST: ${{ vars.TEST_EMAIL_HOST }}
+  EMAIL_PORT: ${{ vars.TEST_EMAIL_PORT }}
+  EMAIL_SECURE: ${{ vars.TEST_EMAIL_SECURE }}
+
+  GITHUB_API_URL: ${{ vars.TEST_GH_API_URL }}
+  GITHUB_TOKEN: ${{ secrets.TEST_GH_TOKEN }}
+
+jobs:
+  quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check code formatting
+        run: npm run format:diff
+
+      - name: Generate prisma client
+        run: npm run prisma:generate
+
+      - name: Lint gRPC contracts
+        run: npm run proto:lint
+
+      - name: Generate gRPC contracts
+        run: npm run proto:generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build main API
+        run: npm run build
+
+      - name: Build Notification service
+        run: npm run build:notification
+
+      - name: Build Tracker service
+        run: npm run build:tracker
+
+      - name: Build GitHub service
+        run: npm run build:github
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: quality
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate prisma client
+        run: npm run prisma:generate
+
+      - name: Generate gRPC contracts
+        run: npm run proto:generate
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run integration tests in Docker
+        run: docker compose -f docker-compose.test.yml run --rm --build test-int
+
+      - name: Cleanup Docker test infrastructure
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v
+
+  e2e-tests:
+    name: End-to-end Tests
+    runs-on: ubuntu-latest
+    needs: integration-tests
+
+    env:
+      WIREMOCK_URL: ${{vars.TEST_WIREMOCK_URL}}
+      MAILPIT_URL: ${{vars.TEST_MAILPIT_URL}}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run e2e tests in Docker
+        run: docker compose -f docker-compose.test.yml run --rm --build test-e2e
+
+      - name: Cleanup Docker test infrastructure
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v

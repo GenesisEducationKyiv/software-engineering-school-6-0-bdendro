@@ -1,0 +1,60 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../libs/database/generated/prisma"
+  moduleFormat        = "cjs"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Subscription DB
+model Subscription {
+  id           Int                    @id @default(autoincrement())
+  repositoryId Int                    @map("repository_id")
+  repository   SubscriptionRepository @relation(fields: [repositoryId], references: [id])
+  email        String
+  token        String                 @unique
+  confirmed    Boolean                @default(false)
+  createdAt    DateTime               @default(now()) @map("created_at")
+
+  @@unique([email, repositoryId])
+  @@index([email])
+  @@map("subscriptions")
+}
+
+model SubscriptionRepository {
+  id            Int            @id
+  repoName      String         @unique @map("repo_name")
+  lastSeenTag   String?        @map("last_seen_tag")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  subscriptions Subscription[]
+
+  @@map("subscription_repositories")
+}
+
+model SubscribeSaga {
+  id             Int      @id @default(autoincrement())
+  email          String
+  repoName       String   @map("repo_name")
+  subscriptionId Int?     @map("subscription_id")
+  repoId         Int?     @map("repo_id")
+  state          String   @default("STARTED")
+  errorReason    String?  @map("error_reason")
+  errorMessage   String?  @map("error_message")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("subscribe_sagas")
+}
+
+// Tracker DB
+model Repository {
+  id          Int      @id @default(autoincrement())
+  repoName    String   @unique @map("repo_name")
+  lastSeenTag String?  @map("last_seen_tag")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("repositories")
+}
