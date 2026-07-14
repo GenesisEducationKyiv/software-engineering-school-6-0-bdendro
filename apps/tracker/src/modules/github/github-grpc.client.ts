@@ -1,4 +1,5 @@
-import * as grpc from '@grpc/grpc-js';
+import { credentials, status } from '@grpc/grpc-js';
+import type { ServiceError } from '@grpc/grpc-js';
 import { GithubClientInterface } from './interfaces/github.client.interface';
 import { GithubServiceClient } from '../../../../../libs/contracts/grpc/github/v1/github';
 import { RepositoryRelease } from './types/repository-release';
@@ -13,7 +14,7 @@ export class GithubGrpcClient implements GithubClientInterface {
     targetAddress: string,
     private readonly mapper: GithubClientGrpcMapper,
   ) {
-    this.client = new GithubServiceClient(targetAddress, grpc.credentials.createInsecure());
+    this.client = new GithubServiceClient(targetAddress, credentials.createInsecure());
   }
 
   public async isRepositoryExists(fullRepoName: string): Promise<boolean> {
@@ -40,7 +41,7 @@ export class GithubGrpcClient implements GithubClientInterface {
     return new Promise((resolve, reject) => {
       this.client.getLatestRelease({ owner, repo }, (error, response) => {
         if (error) {
-          if (error.code === grpc.status.NOT_FOUND) {
+          if (error.code === status.NOT_FOUND) {
             return resolve(null);
           }
 
@@ -57,13 +58,13 @@ export class GithubGrpcClient implements GithubClientInterface {
   }
 
   private handleError(err: unknown): never {
-    const grpcError = err as grpc.ServiceError;
+    const grpcError = err as ServiceError;
     if (grpcError && typeof grpcError.code === 'number') {
       switch (grpcError.code) {
-        case grpc.status.UNAVAILABLE:
+        case status.UNAVAILABLE:
           throw new GithubError(grpcError.message);
 
-        case grpc.status.NOT_FOUND:
+        case status.NOT_FOUND:
           throw new NotFoundError(grpcError.message);
 
         default:

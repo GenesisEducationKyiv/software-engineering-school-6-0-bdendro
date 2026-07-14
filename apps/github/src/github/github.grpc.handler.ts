@@ -1,4 +1,5 @@
-import * as grpc from '@grpc/grpc-js';
+import type { sendUnaryData, ServerUnaryCall, ServiceError } from '@grpc/grpc-js';
+import { status } from '@grpc/grpc-js';
 import {
   CheckRepositoryExistsRequest,
   CheckRepositoryExistsResponse,
@@ -17,8 +18,8 @@ export class GithubGrpcHandler {
   constructor(private readonly githubService: GithubServiceInterface) {}
 
   checkRepositoryExists(
-    call: grpc.ServerUnaryCall<CheckRepositoryExistsRequest, CheckRepositoryExistsResponse>,
-    callback: grpc.sendUnaryData<CheckRepositoryExistsResponse>,
+    call: ServerUnaryCall<CheckRepositoryExistsRequest, CheckRepositoryExistsResponse>,
+    callback: sendUnaryData<CheckRepositoryExistsResponse>,
   ): void {
     void this.handleCall(call, callback, async (request) => {
       const fullRepoName = concatOwnerRepo(request.owner, request.repo);
@@ -28,8 +29,8 @@ export class GithubGrpcHandler {
   }
 
   getLatestRelease(
-    call: grpc.ServerUnaryCall<GetLatestReleaseRequest, GetLatestReleaseResponse>,
-    callback: grpc.sendUnaryData<GetLatestReleaseResponse>,
+    call: ServerUnaryCall<GetLatestReleaseRequest, GetLatestReleaseResponse>,
+    callback: sendUnaryData<GetLatestReleaseResponse>,
   ): void {
     void this.handleCall(call, callback, async (request) => {
       const fullRepoName = concatOwnerRepo(request.owner, request.repo);
@@ -47,8 +48,8 @@ export class GithubGrpcHandler {
   }
 
   private async handleCall<TReq, TRes>(
-    call: grpc.ServerUnaryCall<TReq, TRes>,
-    callback: grpc.sendUnaryData<TRes>,
+    call: ServerUnaryCall<TReq, TRes>,
+    callback: sendUnaryData<TRes>,
     handlerLogic: (request: TReq) => Promise<TRes>,
   ): Promise<void> {
     try {
@@ -61,21 +62,21 @@ export class GithubGrpcHandler {
     }
   }
 
-  private mapError(error: unknown): grpc.ServiceError {
-    const grpcError: Partial<grpc.ServiceError> = {
+  private mapError(error: unknown): ServiceError {
+    const grpcError: Partial<ServiceError> = {
       name: 'GrpcError',
       message: 'Internal server error',
-      code: grpc.status.INTERNAL,
+      code: status.INTERNAL,
     };
 
     if (error instanceof NotFoundError) {
-      grpcError.code = grpc.status.NOT_FOUND;
+      grpcError.code = status.NOT_FOUND;
       grpcError.message = error.message;
     } else if (error instanceof ExternalServiceError) {
-      grpcError.code = grpc.status.UNAVAILABLE;
+      grpcError.code = status.UNAVAILABLE;
       grpcError.message = error.message;
     }
 
-    return grpcError as grpc.ServiceError;
+    return grpcError as ServiceError;
   }
 }
