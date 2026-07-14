@@ -30,20 +30,6 @@ COPY . .
 
 RUN npm run build
 
-# --- Production stage ---
-FROM base AS production
-
-ENV NODE_ENV=production
-
-RUN npm ci --omit=dev
-
-COPY --from=build /app/dist/src ./dist/src
-COPY --from=build /app/dist/libs ./dist/libs
-
-EXPOSE 3000
-
-CMD ["sh", "-c", "npm run start:prod"]
-
 # --- Unit test stage ---
 FROM deps AS test-unit
 
@@ -57,3 +43,17 @@ FROM deps AS test-int
 COPY . .
 
 CMD ["sh", "-c", "npm run test:int"]
+
+# --- Production stage ---
+FROM base AS production
+
+ENV NODE_ENV=production
+
+RUN npm ci --omit=dev
+
+COPY --from=build /app/dist/src ./dist/src
+COPY --from=build /app/dist/libs ./dist/libs
+
+EXPOSE 3000
+
+CMD ["sh", "-c", "npm run start:prod"]
