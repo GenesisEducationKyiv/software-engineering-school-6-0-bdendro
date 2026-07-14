@@ -31,7 +31,7 @@ export function createContainer(env: Env, options?: ContainerOptions) {
   const githubService = new GithubService(githubClient);
   const githubController = new GithubController(githubService);
 
-  const githubGrpcHandler = new GithubGrpcHandler(githubService);
+  const githubGrpcHandler = new GithubGrpcHandler(githubService, logger);
 
   return {
     logger,

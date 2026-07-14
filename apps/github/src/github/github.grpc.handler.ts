@@ -13,9 +13,13 @@ import {
 import { GithubServiceInterface } from './interfaces/github.service.interface';
 import { concatOwnerRepo } from './utils/github';
 import { GITHUB_ERROR_MESSAGES } from './constants/error-messages';
+import { AppLogger } from '../../../../libs/infrastructure/logger/interfaces/logger.interface';
 
 export class GithubGrpcHandler {
-  constructor(private readonly githubService: GithubServiceInterface) {}
+  constructor(
+    private readonly githubService: GithubServiceInterface,
+    private readonly logger: AppLogger,
+  ) {}
 
   checkRepositoryExists(
     call: ServerUnaryCall<CheckRepositoryExistsRequest, CheckRepositoryExistsResponse>,
@@ -73,8 +77,11 @@ export class GithubGrpcHandler {
       grpcError.code = status.NOT_FOUND;
       grpcError.message = error.message;
     } else if (error instanceof ExternalServiceError) {
+      this.logger.warn({ err: error }, 'External service error');
       grpcError.code = status.UNAVAILABLE;
       grpcError.message = error.message;
+    } else {
+      this.logger.error({ err: error }, 'Internal error');
     }
 
     return grpcError as ServiceError;
